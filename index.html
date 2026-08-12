@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LE CONG TIEN</title>
+    <style>
+        :root {
+            --r: 1.77683;                                   /* ti le anh nen 1672 / 941 */
+            --stage-w: max(100vw, calc(100svh * var(--r))); /* be ngang khung anh sau khi phu kin */
+
+            /* Toa do khung vien da ngoai cua o cua, tinh theo % anh goc */
+            --door-l: 40.40%;
+            --door-t: 45.60%;
+            --door-w: 19.00%;
+            --door-h: 49.00%;   /* day cua cham nguong o 94.60% chieu cao anh */
+
+            --swing: 72deg;   /* duoi 90 do de van thay mat truoc cham tro */
+            --dur: 1200ms;
+            --thick: 5.5%;   /* be day canh cua, tinh theo be rong canh */
+
+            /* Diem tu cua phoi canh: tam o cua, cung la huong may bay lao toi */
+            --vp-x: 50%;
+            --vp-y: 70%;
+        }
+        * { box-sizing: border-box; }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+            background: #b9ad9d;
+        }
+
+        /* Khung anh phu kin viewport, giu dung ti le goc.
+           Neo day de phan bi cat luon roi vao bau troi, khong bao gio cat mat cua. */
+        .stage {
+            position: absolute;
+            left: 50%;
+            bottom: 0;
+            transform: translateX(-50%);
+            width: var(--stage-w);
+            height: max(100svh, calc(100vw / var(--r)));
+            transform-origin: var(--vp-x) var(--vp-y);
+        }
+        .bg {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* ---------- LOP CANH SANH ---------- */
+        .stage--hall {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transform: translateX(-50%) scale(1.42);
+            transition: opacity 450ms ease, visibility 0s 450ms;   /* muot khi quay lai cong */
+        }
+
+        /* ---------- LAO VE PHIA TRUOC ----------
+           Phong to quanh tam o cua nen moi thu no ra tu diem tu -> cam giac FPV.
+           CHI dung transform va opacity: hai thu duy nhat compositor chay duoc
+           tren GPU. Dung filter o day se buoc trinh duyet ve lai ca lop anh
+           khong lo moi khung hinh -> giat. Do mo va anh loa duoc lam bang
+           hai lop phu rieng, chi doi opacity. */
+        @keyframes dolly {
+            0%   { transform: translateX(-50%) scale(1);     opacity: 1;
+                   animation-timing-function: cubic-bezier(0.33, 0, 0.67, 1); }
+            13%  { transform: translateX(-50%) scale(0.976); opacity: 1;
+                   animation-timing-function: cubic-bezier(0.5, 0, 0.76, 0.3); }
+            78%  { opacity: 1; }
+            100% { transform: translateX(-50%) scale(6);     opacity: 0; }
+        }
+        @keyframes arrive {
+            0%   { opacity: 0; transform: translateX(-50%) scale(1.42); }
+            40%  { opacity: 1; }
+            100% { opacity: 1; transform: translateX(-50%) scale(1); }
+        }
+        /* Toi dan bon ria khung hinh giua luc bay nhanh nhat */
+        @keyframes rush  { 0% { opacity: 0 } 58% { opacity: 0.55 } 100% { opacity: 0 } }
+        /* Loa sang dung luc giao canh, che luon cho anh cong bi phong to vo net */
+        @keyframes flare { 0% { opacity: 0 } 55% { opacity: 0.10 } 82% { opacity: 0.60 } 100% { opacity: 0 } }
+
+        .stage, .flare, .vignette { backface-visibility: hidden; }
+
+        /* Thang lop GPU ngay tu luc cua bat dau mo, tuc 1.5s truoc khi bay.
+           Neu de den dung luc animation khoi dong moi thang lop thi cai khung
+           dau tien se khuc mot nhip - dung cho de lo nhat. */
+        .arming .stage--gate,
+        .arming .stage--hall,
+        .arming .flare,
+        .arming .vignette { will-change: transform, opacity; }
+
+        .flying .stage--gate {
+            animation: dolly 1900ms linear forwards;   /* nhip do nam trong keyframes */
+        }
+        .flying .stage--hall {
+            visibility: visible;
+            animation: arrive 2400ms cubic-bezier(0.14, 0.8, 0.2, 1) 980ms forwards;
+        }
+
+        .flare, .vignette {
+            position: fixed;
+            inset: 0;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .flare {
+            background: radial-gradient(circle at var(--vp-x) var(--vp-y),
+                rgba(255, 250, 240, 0.98) 0%,
+                rgba(255, 243, 224, 0.72) 26%,
+                rgba(255, 238, 214, 0) 62%);
+        }
+        .vignette {
+            background: radial-gradient(circle at var(--vp-x) var(--vp-y),
+                rgba(26, 18, 10, 0) 22%,
+                rgba(26, 18, 10, 0.45) 68%,
+                rgba(20, 13, 7, 0.85) 100%);
+        }
+        .flying .flare    { animation: flare 1900ms ease-in forwards; will-change: opacity; }
+        .flying .vignette { animation: rush  1900ms ease-out forwards; will-change: opacity; }
+
+        /* Xong hanh trinh thi go lop cong ra khoi mach ve */
+        .arrived .stage--gate { display: none; }
+        .arrived .stage--hall { pointer-events: auto; cursor: pointer; }
+        .arrived .flare, .arrived .vignette { display: none; }
+
+        /* ---------- O CUA ---------- */
+        .doorway {
+            position: absolute;
+            left: var(--door-l);
+            top: var(--door-t);
+            width: var(--door-w);
+            height: var(--door-h);
+            margin: 0;
+            padding: 0;
+            border: 0;
+            background: none;
+            cursor: pointer;
+            perspective: calc(var(--stage-w) * 0.9);
+            transform-style: preserve-3d;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .doorway:focus-visible { outline: 2px solid #ffd9a0; outline-offset: 4px; }
+
+        /* ---------- CANH CUA ---------- */
+        .leaf {
+            position: absolute;
+            top: 0;
+            width: 50%;
+            height: 100%;
+            transform-style: preserve-3d;
+            transition: transform var(--dur) cubic-bezier(0.5, 0.02, 0.18, 1);
+        }
+        .leaf--l { left: 0;  transform-origin: left center; }
+        .leaf--r { right: 0; transform-origin: right center; transition-delay: 80ms; }
+
+        .leaf img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: fill;   /* ep vua o cua; sai lech ngang 7% (trai) / 13% (phai) */
+            backface-visibility: hidden;   /* qua 90 do thi nhuong cho mat sau */
+            /* Hoa sac voi anh nen: anh goc co sat 0.70 trong khi toan canh chi 0.30.
+               Ha bao hoa, giam tuong phan va lam mem nhe cho khop do net cua anh nen. */
+            filter:
+                saturate(0.76)
+                contrast(0.95)
+                brightness(1.01)
+                blur(0.25px)
+                drop-shadow(3px 4px 5px rgba(38, 26, 14, 0.5));
+        }
+
+        /* ---------- BE DAY CANH CUA ----------
+           Mot tam mong dat o me tu do, xoay 90 do de nam vuong goc voi mat cua
+           va an sau ve phia sau. Cua dong thi tam nay chieu thanh mot duong ->
+           vo hinh; cua mo thi lo ra dung bang be day that cua canh. */
+        .edge {
+            position: absolute;
+            top: 0;
+            height: 100%;
+            width: var(--thick);
+            backface-visibility: hidden;
+            background:
+                linear-gradient(to bottom, rgba(20, 13, 7, 0.5), rgba(20, 13, 7, 0) 14%),
+                linear-gradient(to right, #7a5f45, #4b3728 55%, #33251a);
+        }
+        .leaf--l .edge { right: 0; transform-origin: right center; transform: rotateY(-90deg); }
+        .leaf--r .edge { left: 0;  transform-origin: left center;  transform: rotateY(90deg); }
+
+        /* ---------- MAT SAU ----------
+           Xoay 105 do la da nhin qua 90 do, tuc dang thay lung canh cua.
+           Mat sau cua go tram thuong tron tron, khong cham tro. */
+        .back {
+            position: absolute;
+            inset: 0;
+            transform: rotateY(180deg);
+            backface-visibility: hidden;
+            background:
+                repeating-linear-gradient(90deg,
+                    rgba(0, 0, 0, 0.10) 0 1px, rgba(255, 255, 255, 0.02) 1px 6px),
+                linear-gradient(to bottom, rgba(18, 12, 6, 0.45), rgba(18, 12, 6, 0) 16%),
+                linear-gradient(100deg, #6a5240, #4b3829 58%, #372a1e);
+            box-shadow: inset 0 0 0 2px rgba(30, 20, 12, 0.55);
+        }
+        /* Hai o gia chim goi lai khung panel cua mat sau */
+        .back::before, .back::after {
+            content: '';
+            position: absolute;
+            left: 12%;
+            right: 12%;
+            border-radius: 1px;
+            box-shadow:
+                inset 0 0 0 1px rgba(22, 15, 9, 0.6),
+                inset 0 2px 4px rgba(0, 0, 0, 0.35);
+        }
+        .back::before { top: 6%;  height: 48%; }
+        .back::after  { top: 58%; height: 36%; }
+
+        /* Bong do trong hoc + huong sang, chi hien khi cua dong */
+        .shade {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            backface-visibility: hidden;
+            transition: opacity var(--dur) ease;
+            background:
+                /* man suong am cua khi quyen, keo cua ve cung tone voi canh */
+                linear-gradient(rgba(206, 190, 166, 0.06), rgba(206, 190, 166, 0.06)),
+                /* bong duoi lanh to */
+                linear-gradient(to bottom, rgba(24, 16, 9, 0.55), rgba(24, 16, 9, 0) 20%),
+                /* bong sat nguong cua */
+                linear-gradient(to top, rgba(24, 16, 9, 0.32), rgba(24, 16, 9, 0) 9%),
+                /* anh sang xien tu tren trai */
+                linear-gradient(108deg, rgba(255, 244, 222, 0.16), rgba(255, 244, 222, 0) 42%);
+        }
+        /* Bong ma da o canh ngoai moi la cua */
+        .leaf--l .shade { background-image:
+                linear-gradient(rgba(206, 190, 166, 0.06), rgba(206, 190, 166, 0.06)),
+                linear-gradient(to bottom, rgba(24, 16, 9, 0.55), rgba(24, 16, 9, 0) 20%),
+                linear-gradient(to top, rgba(24, 16, 9, 0.32), rgba(24, 16, 9, 0) 9%),
+                linear-gradient(to right, rgba(24, 16, 9, 0.42), rgba(24, 16, 9, 0) 11%),
+                linear-gradient(108deg, rgba(255, 244, 222, 0.16), rgba(255, 244, 222, 0) 42%); }
+        .leaf--r .shade { background-image:
+                linear-gradient(rgba(206, 190, 166, 0.06), rgba(206, 190, 166, 0.06)),
+                linear-gradient(to bottom, rgba(24, 16, 9, 0.55), rgba(24, 16, 9, 0) 20%),
+                linear-gradient(to top, rgba(24, 16, 9, 0.32), rgba(24, 16, 9, 0) 9%),
+                linear-gradient(to left, rgba(24, 16, 9, 0.42), rgba(24, 16, 9, 0) 11%),
+                linear-gradient(108deg, rgba(255, 244, 222, 0.10), rgba(255, 244, 222, 0) 42%); }
+
+        .doorway.open .shade { opacity: 0; }
+
+        /* Mo ra ngoai: canh xoay gan nhu vuong goc voi huong nhin nen mat cua
+           chi con nhan anh sang xien, toi dan ve phia ban le. */
+        .leaf::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg,
+                rgba(14, 9, 4, 0.70) 0%,
+                rgba(14, 9, 4, 0.34) 55%,
+                rgba(14, 9, 4, 0.12) 100%);
+            backface-visibility: hidden;
+            opacity: 0;
+            transition: opacity var(--dur) ease;
+            pointer-events: none;
+        }
+        .leaf--r::after { transform: scaleX(-1); }
+
+        /* Khe sang giua hai canh, moi goi bam vao */
+        .seam {
+            position: absolute;
+            top: 8%;
+            left: 50%;
+            width: 2px;
+            height: 84%;
+            transform: translateX(-50%);
+            background: linear-gradient(to bottom,
+                transparent, rgba(255, 206, 132, 0.9), transparent);
+            filter: blur(1.5px);
+            animation: pulse 3.4s ease-in-out infinite;
+            pointer-events: none;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 0.10; }
+            50%      { opacity: 0.60; }
+        }
+
+        /* ---------- TRANG THAI MO ----------
+           Mo RA NGOAI, dung voi cach cua gan tren mat ngoai khung da.
+           Mo vao trong se phai chui sau tuong va bi tru da che khuat hoan toan. */
+        .doorway.open .leaf--l { transform: rotateY(calc(var(--swing) * -1)); }
+        .doorway.open .leaf--r { transform: rotateY(var(--swing)); }
+        .doorway.open .leaf::after { opacity: 1; }
+        .doorway.open .seam { opacity: 0; animation: none; transition: opacity 350ms; }
+
+        @media (prefers-reduced-motion: reduce) {
+            .leaf, .leaf::after { transition-duration: 1ms; }
+            .seam { animation: none; opacity: 0.35; }
+            /* Khong lao, chi hoa mo hai canh cho nhau */
+            .flying .stage--gate {
+                animation: none; opacity: 0; transition: opacity 450ms ease;
+            }
+            .flying .stage--hall {
+                animation: none; opacity: 1;
+                transform: translateX(-50%) scale(1);
+            }
+            .flying .flare, .flying .vignette { animation: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="stage stage--gate">
+        <img class="bg"
+             src="assets/images/memory-05-1440w.webp"
+             srcset="assets/images/memory-05-960w.webp 960w,
+                     assets/images/memory-05-1440w.webp 1440w,
+                     assets/images/memory-05.webp 1672w"
+             sizes="100vw"
+             width="1672" height="941"
+             fetchpriority="high" decoding="async" alt="">
+
+        <button class="doorway" type="button" aria-expanded="false" aria-label="Mở cửa">
+            <span class="leaf leaf--l">
+                <img src="assets/images/door-left-640w.webp"
+                     srcset="assets/images/door-left-320w.webp 320w,
+                             assets/images/door-left-640w.webp 640w"
+                     sizes="10vw" width="576" height="1514" alt="">
+                <span class="shade"></span>
+                <span class="back"></span>
+                <span class="edge"></span>
+            </span>
+            <span class="leaf leaf--r">
+                <img src="assets/images/door-right-640w.webp"
+                     srcset="assets/images/door-right-320w.webp 320w,
+                             assets/images/door-right-640w.webp 640w"
+                     sizes="10vw" width="621" height="1521" alt="">
+                <span class="shade"></span>
+                <span class="back"></span>
+                <span class="edge"></span>
+            </span>
+            <span class="seam"></span>
+        </button>
+    </div>
+
+    <div class="stage stage--hall">
+        <img class="bg"
+             src="assets/images/memory-06-1440w.webp"
+             srcset="assets/images/memory-06-960w.webp 960w,
+                     assets/images/memory-06-1440w.webp 1440w,
+                     assets/images/memory-06.webp 1672w"
+             sizes="100vw"
+             width="1672" height="941"
+             fetchpriority="low" decoding="async" alt="">
+    </div>
+
+    <div class="vignette"></div>
+    <div class="flare"></div>
+
+    <script>
+        const doorway = document.querySelector('.doorway');
+        const hall    = document.querySelector('.stage--hall');
+        const body    = document.body;
+        const calm    = matchMedia('(prefers-reduced-motion: reduce)');
+
+        const DOORS = 1280;   // 1200ms xoay + 80ms tre cua canh phai
+        const HOLD  = 1500;   // dung lai ngam truoc khi lao vao
+        const ARRIVE_DELAY = 980, ARRIVE = 2400;
+
+        let launch = null;
+
+        // Giai ma san anh sanh. Neu de trinh duyet giai ma giua chung animation
+        // thi luong dung hinh mot nhip -> cam giac do cung.
+        const hallImg = hall.querySelector('img');
+        let decoding = null;
+        const hallReady = () => (decoding ||= hallImg.decode
+            ? hallImg.decode().catch(() => {})
+            : Promise.resolve());
+
+        doorway.addEventListener('click', () => {
+            const open = doorway.classList.toggle('open');
+            doorway.setAttribute('aria-expanded', String(open));
+            doorway.setAttribute('aria-label', open ? 'Đóng cửa' : 'Mở cửa');
+
+            clearTimeout(launch);
+            if (open) {
+                body.classList.add('arming');   // thang lop GPU truoc
+                hallReady();                    // giai ma song song voi luc cua dang xoay
+                launch = setTimeout(fly, calm.matches ? 400 : DOORS + HOLD);
+            } else {
+                body.classList.remove('arming');
+            }
+        });
+
+        function fly() {
+            doorway.disabled = true;
+            // Khong cho requestAnimationFrame o day: neu nguoi dung chuyen tab,
+            // rAF ngung chay va hieu ung se ket lai vinh vien.
+            // Cho anh giai ma xong, nhung toi da 600ms - anh loi thi van phai bay.
+            Promise.race([
+                hallReady(),
+                new Promise(r => setTimeout(r, 600)),
+            ]).then(() => {
+                body.classList.add('flying');
+                setTimeout(() => body.classList.add('arrived'),
+                           calm.matches ? 300 : ARRIVE_DELAY + ARRIVE);
+            });
+        }
+
+        // Bam vao sanh de quay lai cong, cua dong san
+        hall.addEventListener('click', () => {
+            if (!body.classList.contains('arrived')) return;
+            body.classList.remove('flying', 'arrived', 'arming');
+            doorway.classList.remove('open');
+            doorway.disabled = false;
+            doorway.setAttribute('aria-expanded', 'false');
+            doorway.setAttribute('aria-label', 'Mở cửa');
+        });
+    </script>
+</body>
+</html>
