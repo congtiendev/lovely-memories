@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LE CONG TIEN</title>
+
+    <link rel="stylesheet" href="assets/css/fonts.css">
+    <link rel="stylesheet" href="assets/css/tokens.css">
+    <link rel="stylesheet" href="assets/css/base.css">
+    <link rel="stylesheet" href="assets/css/components/stage.css">
+    <link rel="stylesheet" href="assets/css/components/doorway.css">
+    <link rel="stylesheet" href="assets/css/components/flight.css">
+    <link rel="stylesheet" href="assets/css/components/letter.css">
+    <link rel="stylesheet" href="assets/css/components/room.css">
+    <link rel="stylesheet" href="assets/css/components/interlude.css">
+    <link rel="stylesheet" href="assets/css/components/timeline.css">
+
+    <script type="module" src="assets/js/main.js"></script>
+</head>
+<body>
+    <!-- ---------- CONG: anh nen + o cua bam duoc ---------- -->
+    <div class="stage stage--gate">
+        <img class="bg"
+             src="assets/images/memory-05-1440w.webp"
+             srcset="assets/images/memory-05-960w.webp 960w,
+                     assets/images/memory-05-1440w.webp 1440w,
+                     assets/images/memory-05.webp 1672w"
+             sizes="100vw"
+             width="1672" height="941"
+             fetchpriority="high" decoding="async" alt="">
+
+        <button class="doorway" type="button" aria-expanded="false" aria-label="Mở cửa">
+            <span class="leaf leaf--l">
+                <img src="assets/images/door-left-640w.webp"
+                     srcset="assets/images/door-left-320w.webp 320w,
+                             assets/images/door-left-640w.webp 640w"
+                     sizes="10vw" width="576" height="1514" alt="">
+                <span class="shade"></span>
+                <span class="back"></span>
+                <span class="edge"></span>
+            </span>
+            <span class="leaf leaf--r">
+                <img src="assets/images/door-right-640w.webp"
+                     srcset="assets/images/door-right-320w.webp 320w,
+                             assets/images/door-right-640w.webp 640w"
+                     sizes="10vw" width="621" height="1521" alt="">
+                <span class="shade"></span>
+                <span class="back"></span>
+                <span class="edge"></span>
+            </span>
+            <span class="seam"></span>
+        </button>
+    </div>
+
+    <!-- ---------- SANH: diem den sau khi bay qua o cua ---------- -->
+    <div class="stage stage--hall">
+        <img class="bg"
+             src="assets/images/memory-06-1440w.webp"
+             srcset="assets/images/memory-06-960w.webp 960w,
+                     assets/images/memory-06-1440w.webp 1440w,
+                     assets/images/memory-06.webp 1672w"
+             sizes="100vw"
+             width="1672" height="941"
+             fetchpriority="low" decoding="async" alt="">
+    </div>
+
+    <!-- ---------- HAI LOP PHU CUA CHUYEN CANH ---------- -->
+    <div class="vignette"></div>
+    <div class="flare"></div>
+
+    <!-- ---------- CAC PHONG KY NIEM ----------
+         Dung bang JS tu thu muc memories/ (xem js/components/gallery.js).
+         Nam TRUOC .letter: bam "Bat dau" thi khung tranh phai duoc nhin thay
+         dang nhac len phia truoc canh phong dang hien dan. -->
+    <div class="rooms"></div>
+
+    <!-- ---------- DONG THOI GIAN: nut goc trai, mo ra bang cac ky niem ---------- -->
+    <nav class="timeline" lang="vi">
+        <button class="timeline__tab" type="button"
+                aria-expanded="false" aria-controls="timeline-panel">
+            <img src="assets/images/timeline-tab-480w.webp"
+                 srcset="assets/images/timeline-tab-480w.webp 480w,
+                         assets/images/timeline-tab-720w.webp 720w"
+                 sizes="26vmin" width="1535" height="616"
+                 fetchpriority="low" decoding="async" alt="">
+            <span class="timeline__tab-label">Dòng thời gian</span>
+        </button>
+        <div class="timeline__panel" id="timeline-panel">
+            <img class="timeline__frame"
+                 src="assets/images/timeline-panel-768w.webp"
+                 srcset="assets/images/timeline-panel-480w.webp 480w,
+                         assets/images/timeline-panel-768w.webp 768w,
+                         assets/images/timeline-panel-1024w.webp 1024w"
+                 sizes="50vmin" width="1024" height="1536"
+                 fetchpriority="low" decoding="async" alt="">
+            <ul class="timeline__rows"></ul>
+        </div>
+    </nav>
+
+    <!-- ---------- MAN CHUYEN CHUONG ----------
+         Vua la tam bien ngan hai chuong, vua la man cho tai anh phong sau. -->
+    <div class="interlude">
+        <p class="interlude__text"></p>
+    </div>
+
+    <!-- ---------- KHUNG TRANH: roi xuong giua sanh, khac loi nhan ---------- -->
+    <div class="letter" lang="vi">
+        <div class="letter__frame">
+            <!-- Man du lon thi khung vang nam ngang, con lai la khung da doc.
+                 Nguong phai khop @media trong css/tokens.css: lech nhau thi
+                 anh mot ti le ma hop khung mot ti le -> khung bi keo meo. -->
+            <picture>
+                <source media="(min-width: 760px) and (min-height: 620px)"
+                        srcset="assets/images/frame-02-480w.webp 480w,
+                                assets/images/frame-02-960w.webp 960w,
+                                assets/images/frame-02-1536w.webp 1536w"
+                        sizes="66vw"
+                        width="1536" height="1024">
+                <img class="letter__art"
+                     src="assets/images/frame-891w.webp"
+                     srcset="assets/images/frame-480w.webp 480w,
+                             assets/images/frame-891w.webp 891w"
+                     sizes="96vw"
+                     width="891" height="1232"
+                     fetchpriority="low" decoding="async" alt="">
+            </picture>
+            <h1 class="letter__title">Lời ngỏ</h1>
+            <div class="letter__page"></div>
+            <!-- Nam trong o bau duc duoi day khung, chi hien khi khac xong chu -->
+            <button class="letter__start" type="button">Bắt đầu</button>
+        </div>
+    </div>
+</body>
+</html>

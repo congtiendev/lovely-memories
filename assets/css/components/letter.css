@@ -1,0 +1,242 @@
+/* ---------- KHUNG TRANH + LOI NHAN ----------
+   Moi co chu deu la mot ti le cua chieu cao khung, va moi o chu deu la % cua
+   anh khung. Nho vay ca cum tu can theo khung o moi co man hinh; chi hai
+   nguong trong tokens.css la doi bo toa do (khung doc / khung ngang). */
+.letter {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding-bottom: var(--frame-lift);
+    visibility: hidden;
+    pointer-events: none;
+
+    /* Chu tren mat da: khai bao mot lan o day cho ca loi nhan va nut Bat dau.
+       Garamond co net thap, x-height nho. Neu phai roi ve font he thong thi
+       ep no thu ve cung x-height, khong thi chu se no ra va tran khoi mat da. */
+    font-family: 'EB Garamond', Georgia, 'Times New Roman', serif;
+    font-size-adjust: ex-height 0.44;
+    font-weight: 500;
+    color: var(--ink);
+    text-shadow: var(--ink-carve);
+}
+/* Chi ton tai khi da vao sanh */
+.arrived .letter { visibility: visible; }
+/* Bam "Bat dau" xong thi khung roi khoi man hinh.
+   Dung display chu KHONG dung visibility: nut Bat dau tu dat visibility:visible
+   cho minh, ma con dat tuong minh thi thang cha dat hidden - khung se tan nhung
+   chu "Bat dau" van noi tren canh phong. display:none go het ca nhanh. */
+.letter.is-gone { display: none; }
+
+.letter__frame {
+    position: relative;
+    width: var(--frame-w);
+    height: var(--frame-h);
+    transform: translateY(-135svh);   /* treo san tren dinh man hinh, cho roi */
+    backface-visibility: hidden;
+    pointer-events: auto;   /* bam vao khung thi khong bi tinh la bam ra sanh */
+    filter: drop-shadow(0 2.5vh 3.5vh rgba(24, 16, 9, 0.5));
+}
+
+.letter__art {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* ---------- ROI XUONG ----------
+   Cham day o mo 52% roi nay len, dan tat theo hai nhip nho: khung nang thi
+   nay thap, kem mot chut lac quanh diem treo cho ra da quan tinh. */
+@keyframes drop {
+    0%   { transform: translateY(-135svh) rotate(-3.5deg); }
+    52%  { transform: translateY(2.2%)    rotate(1.5deg);
+           animation-timing-function: cubic-bezier(0.3, 0, 0.4, 1); }
+    68%  { transform: translateY(-1.8%)   rotate(-1deg); }
+    82%  { transform: translateY(0.7%)    rotate(0.45deg); }
+    92%  { transform: translateY(-0.25%)  rotate(-0.15deg); }
+    100% { transform: translateY(0)       rotate(0); }
+}
+
+.letter.is-dropping .letter__frame {
+    animation: drop var(--drop-dur) cubic-bezier(0.5, 0, 0.75, 0.35) forwards;
+    will-change: transform;   /* chi trong luc roi, xong la go ngay */
+}
+/* Da nam yen o cho: khong animation, khong lop GPU */
+.letter.is-down .letter__frame { transform: translateY(0); }
+
+/* ---------- TITLE ----------
+   Khung ngang thi title nam trong o cartouche dinh khung; khung doc thi khac
+   thang len dau panel. Toa do o tokens.css. Title khac san tren da, roi xuong
+   cung khung chu khong co hieu ung rieng. */
+.letter__title {
+    position: absolute;
+    left: var(--title-x);
+    right: var(--title-x);
+    top: var(--title-t);
+    height: var(--title-h);
+    display: grid;
+    place-items: center;
+    margin: 0;
+    font-size: calc(var(--frame-h) * var(--title-size));
+    font-weight: 500;
+    letter-spacing: 0.22em;
+    text-indent: 0.22em;   /* bu khoang tracking thua ben phai cho can giua */
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+/* ---------- MAT DA ----------
+   Toa do o chu va co chu deu o tokens.css, khac nhau giua khung doc va khung
+   ngang. Co chu chon bang cach do: --page-size la ti le lon nhat ma khoi chu
+   con chua day o (khoang 89% chieu cao o, du ra dung mot dong). Sua loi nhan
+   dai hon la phai do lai. */
+.letter__page {
+    position: absolute;
+    left: var(--page-x);
+    right: var(--page-x);
+    top: var(--page-t);
+    bottom: var(--page-b);
+    overflow: hidden;
+    font-size: calc(var(--frame-h) * var(--page-size));
+    line-height: 1.5;
+    letter-spacing: 0.012em;
+    font-variant-numeric: oldstyle-nums;   /* so 3 kieu co, thap ngang chu thuong */
+    text-wrap: pretty;
+}
+
+.letter__p {
+    margin: 0 0 0.45em;
+}
+.letter__p:last-child {
+    margin-bottom: 0;
+}
+
+/* ---------- NHAT BUA: tung ky tu duoc khac vao ----------
+   Ky tu hien ra to hon roi thu lai dung co, nhu vua bi go mot nhat vao da.
+   Chi dung transform va opacity de compositor lo het tren GPU - luc cao diem
+   co hon chuc ky tu cung dang chay hieu ung nay. */
+.letter__chip {
+    display: inline-block;   /* inline khong nhan transform */
+    animation: chisel 300ms cubic-bezier(0.2, 0.85, 0.3, 1);
+}
+@keyframes chisel {
+    0%   { opacity: 0;    transform: scale(1.55); }
+    45%  { opacity: 0.96; }
+    100% { opacity: 1;    transform: scale(1); }
+}
+
+/* Con tro nhay o doan dang go */
+.letter__p.is-typing::after {
+    content: '';
+    display: inline-block;
+    width: 0.07em;
+    height: 1.02em;
+    margin-left: 0.07em;
+    vertical-align: -0.16em;
+    background: currentColor;
+    animation: caret 1s steps(1, end) infinite;
+}
+@keyframes caret {
+    0%, 50%   { opacity: 0.75; }
+    51%, 100% { opacity: 0; }
+}
+
+/* ---------- NUT BAT DAU ----------
+   Khung ngang thi nut nam trong o bau duc duoi day khung; khung doc thi khac
+   thang len chan panel. Mat da chinh la mat nut, khong ve nen gia. Chi hien
+   khi loi nhan da khac xong; truoc do visibility:hidden nen cung khong lot
+   vao thu tu Tab. */
+.letter__start {
+    position: absolute;
+    left: var(--start-x);
+    right: var(--start-x);
+    top: var(--start-t);
+    height: var(--start-h);
+    display: grid;
+    place-items: center;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;   /* om theo o bau duc, de quang sang khong bi vuong goc */
+    font: inherit;           /* nut khong tu ke thua font cua trang */
+    color: inherit;
+    font-size: calc(var(--frame-h) * var(--start-size));
+    letter-spacing: 0.18em;
+    text-indent: 0.18em;     /* bu khoang tracking thua ben phai cho can giua */
+    text-transform: uppercase;
+    text-shadow: var(--ink-carve);
+    visibility: hidden;
+    opacity: 0;
+    transform: translateY(0.3em);
+    cursor: pointer;
+    /* Vung sang dong trong long o bau duc. Dat o background nen luon nam duoi
+       chu, khong lam nhoe net khac. */
+    background: radial-gradient(115% 150% at 50% 45%,
+        rgba(255, 224, 158, 0.55),
+        rgba(255, 198, 112, 0.16) 58%,
+        rgba(255, 190, 100, 0) 78%);
+    transition: opacity 520ms ease, transform 520ms ease-out,
+                color 220ms ease, background 260ms ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Hien ra roi tho sang lien tuc de nguoi doc biet la bam duoc.
+   Phan hien ra dung transition chu khong dung animation: trang thai hien la
+   mot khai bao that, khong phai keyframe cuoi cua animation - animation
+   khong chay (thiet bi yeu, timeline bi dung) thi nut van phai hien. */
+.letter.is-read .letter__start {
+    visibility: visible;
+    opacity: 1;
+    transform: none;
+    animation: beacon 2.6s ease-in-out 520ms infinite;
+}
+@keyframes beacon {
+    0%, 100% {
+        box-shadow: 0 0 0.5em rgba(255, 200, 116, 0.22),
+                    0 0 1.6em rgba(255, 186, 96, 0.1);
+    }
+    50% {
+        box-shadow: 0 0 0.95em rgba(255, 210, 132, 0.6),
+                    0 0 2.7em rgba(255, 190, 100, 0.34);
+    }
+}
+
+/* Cham vao thi quang sang manh len va net khac dam lai nhu vua duoc mai */
+.letter__start:hover {
+    color: rgba(88, 62, 28, 0.96);
+    background: radial-gradient(115% 150% at 50% 45%,
+        rgba(255, 232, 176, 0.78),
+        rgba(255, 202, 120, 0.26) 58%,
+        rgba(255, 190, 100, 0) 80%);
+}
+.letter__start:active { transform: translateY(0.06em); }
+.letter__start:focus-visible {
+    outline: 2px solid #c8a15a;
+    outline-offset: 0.35em;
+}
+
+/* ---------- ROI KHOI MAN HINH ----------
+   Bam Bat dau: khung duoc nhac len va tat dan, tra lai ca gian sanh. */
+@keyframes lift {
+    0%   { transform: translateY(0);    opacity: 1; }
+    100% { transform: translateY(-14%); opacity: 0; }
+}
+.letter.is-leaving .letter__frame {
+    animation: lift var(--lift-dur) cubic-bezier(0.45, 0, 0.75, 0.25) forwards;
+    will-change: transform, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .letter__frame { transform: translateY(0); }
+    .letter.is-dropping .letter__frame { animation: none; }
+    .letter__chip { animation: none; }
+    .letter__p.is-typing::after { animation: none; opacity: 0.6; }
+    /* Nut hien ngay, khong hoa dan va khong tho sang; nhung van phai giu mot
+       quang sang tinh de no noi len khoi mat da */
+    .letter__start { transform: none; transition: none; }
+    .letter.is-read .letter__start {
+        animation: none;
+        box-shadow: 0 0 0.8em rgba(255, 206, 128, 0.45),
+                    0 0 2.2em rgba(255, 190, 100, 0.24);
+    }
+}

@@ -1,0 +1,222 @@
+/* ---------- DONG THOI GIAN ----------
+   Nut o goc trai mo ra mot bang treo, trong bang la cac bien ten - moi bien
+   mot ky niem, ten lay tu ten thu muc. Hai anh dung o day:
+     timeline-row    mot dong: diem tron + bien ten
+     timeline-panel  khung bang rong, lam nen cho cac dong
+     timeline-tab    bien bau duc (frame-04 da cat viong), lam nut goc trai
+
+   Toa do do bang cach quet pixel trong anh:
+     khung   mat lom x 26.3-73.2%, y 15.4-75.7%
+     dong    diem tron tam x 9.2%; long bien x 31.6-96.8%, y 13.7-87.7%
+     nut     long bau duc x 15-85.3%, y 25.6-73.7%
+   Nam DUOI tam bien chuyen chuong (z-index 10) de luc chuyen canh thi bi che. */
+.timeline {
+    /* Chi la lop chua: khong an chuot, de bam xuyen qua vao canh phia sau */
+    position: fixed;
+    inset: 0;
+    z-index: 8;
+    pointer-events: none;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 500ms ease, visibility 0s 500ms;
+}
+.timeline.is-shown {
+    visibility: visible;
+    opacity: 1;
+    transition: opacity 500ms ease;
+}
+
+/* Lop nen toi khi mo bang. Khung bang la da kem va vang, dat trung len buc
+   tuong cung mau kem thi tan vao nhau - phai co mot lop toi phia sau moi tach
+   ra duoc. Mau cung ho voi lop xem tranh de ca trang mot bang mau.
+   KHONG dung backdrop-filter o day: no bien lop nay thanh backdrop root va
+   Chrome se ve no de len ca cai bang, du bang co z-index cao hon. Muon lam mo
+   hau canh thi phai lam mo chinh canh, khong lam qua lop phu. */
+.timeline::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;   /* dat so tuong minh cho ca ba lop (nen 0 < bang 1 < nut 2):
+                     de auto thi thu tu ve phu thuoc cach compositor xu ly
+                     filter cua bang, va bang co the bi lop nen phu len */
+    background: rgba(38, 31, 24, 0.62);
+    opacity: 0;
+    transition: opacity 420ms ease;
+}
+.timeline.is-open::before { opacity: 1; }
+
+/* ---------- NUT GOC TRAI ----------
+   Nam TREN bang (z-index 2): bang da chiem tron chieu cao nen nut phai la cai
+   tay nam dat len phan phao co cua bang. */
+.timeline__tab {
+    position: absolute;
+    top: 2.2vmin;
+    left: 2.2vmin;
+    z-index: 2;
+    pointer-events: auto;
+    display: block;
+    width: clamp(7.5rem, 17vmin, 11.5rem);
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    filter: drop-shadow(0 0.4vmin 0.8vmin rgba(26, 16, 6, 0.55));
+    transition: transform 200ms ease, filter 200ms ease;
+    -webkit-tap-highlight-color: transparent;
+}
+.timeline__tab:hover { transform: translateY(-1px); filter: drop-shadow(0 0.6vmin 1.1vmin rgba(26, 16, 6, 0.6)); }
+.timeline__tab:active { transform: translateY(1px); }
+.timeline__tab:focus-visible { outline: 2px solid #e8c98a; outline-offset: 0.4em; border-radius: 0.4em; }
+
+.timeline__row img,
+.timeline__tab img {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+/* ---------- BANG TREO ----------
+   Cao tron man hinh. Kich thuoc lay theo canh nao chat hon roi suy ra canh kia
+   tu ti le anh (1024/1536) - khong bao gio ep anh meo. */
+.timeline__panel {
+    --tl-h: min(100svh, calc(94vw / 0.6667));
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    pointer-events: auto;
+    height: var(--tl-h);
+    width: calc(var(--tl-h) * 0.6667);
+    /* Ha xuong tu nut, khong troi ngang: bang duoc treo tu cai nut do */
+    transform-origin: 12% 0;
+    transform: translateY(-1.5%) scaleY(0.985);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    filter: drop-shadow(0 1.2vmin 2.4vmin rgba(22, 14, 6, 0.5));
+    transition: opacity 420ms ease, transform 520ms cubic-bezier(0.2, 0.8, 0.2, 1),
+                visibility 0s 420ms;
+}
+.timeline.is-open .timeline__panel {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: none;
+    transition: opacity 420ms ease, transform 520ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.timeline__frame {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* Cac dong nam trong mat lom cua khung */
+.timeline__rows {
+    position: absolute;
+    left: 26.3%;
+    right: 26.8%;
+    /* Cao bang dung nhom dong roi can giua trong mat lom (15.4-75.7%): neo
+       theo bottom thi hop cao hon nhom va thanh doc se tho ra hai dau. */
+    top: 45.5%;
+    translate: 0 -50%;
+    max-height: 60.3%;
+    display: flex;
+    flex-direction: column;
+    gap: 12%;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+/* Thanh doc noi cac diem tron, ke qua dung tam diem (9.2% be ngang dong) */
+.timeline__rows::before {
+    content: '';
+    position: absolute;
+    left: 9.2%;   /* dung tam diem tron cua anh dong */
+    top: -6%;
+    bottom: -6%;
+    width: 2px;
+    translate: -50% 0;
+    background: linear-gradient(to bottom,
+        rgba(190, 148, 74, 0),
+        rgba(198, 158, 88, 0.85) 12%,
+        rgba(198, 158, 88, 0.85) 88%,
+        rgba(190, 148, 74, 0));
+    box-shadow: 0 0 0.5em rgba(255, 206, 128, 0.35);
+}
+
+.timeline__row {
+    position: relative;
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    filter: drop-shadow(0 0.25vmin 0.5vmin rgba(28, 18, 8, 0.35));
+    transition: transform 220ms ease, filter 220ms ease;
+    -webkit-tap-highlight-color: transparent;
+}
+.timeline__row:hover { transform: translateX(1.5%); }
+.timeline__row:active { transform: translateX(0.5%); }
+.timeline__row:focus-visible { outline: 2px solid #e8c98a; outline-offset: 0.3em; border-radius: 0.3em; }
+
+/* Ten ky niem khac tren mat bien; nut goc trai dung cung cong thuc */
+.timeline__label,
+.timeline__tab-label {
+    position: absolute;
+    left: 34%;
+    right: 5%;
+    top: 20%;
+    bottom: 19%;
+    display: grid;
+    place-items: center;
+    font-family: 'EB Garamond', Georgia, 'Times New Roman', serif;
+    font-size-adjust: ex-height 0.44;
+    font-weight: 500;
+    font-size: clamp(0.62rem, 1.45vmin, 1rem);
+    letter-spacing: 0.14em;
+    text-indent: 0.14em;
+    white-space: nowrap;
+    color: var(--ink);
+    text-shadow: var(--ink-carve);
+}
+.timeline__tab-label {
+    /* Hop chu rieng: long bau duc cua nut la x 15-85.3%, y 25.6-73.7% */
+    left: 18%;
+    right: 18%;
+    top: 30%;
+    bottom: 30%;
+    /* Chu hoa rong hon chu so nen phai nho hon dong trong bang, khong thi tran
+       ra ngoai long bien (do: 14 ky tu hoa ~ 0.65em moi ky tu). */
+    font-size: clamp(0.44rem, 0.95vmin, 0.7rem);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    text-indent: 0.08em;
+}
+
+/* Chuong dang xem: net khac dam hon va mot quang sang trong long bien */
+.timeline__row.is-current .timeline__label {
+    color: rgba(88, 62, 28, 0.96);
+    font-weight: 600;
+}
+.timeline__row.is-current::after {
+    content: '';
+    position: absolute;
+    left: 31.6%;
+    right: 3.2%;
+    top: 13.7%;
+    bottom: 12.3%;
+    border-radius: 0.3em;
+    background: radial-gradient(120% 150% at 50% 50%,
+        rgba(255, 224, 158, 0.45), rgba(255, 198, 112, 0) 72%);
+    pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .timeline, .timeline.is-shown { transition: none; }
+    .timeline__panel { transform: none; transition: none; }
+    .timeline.is-open .timeline__panel { transition: none; }
+    .timeline__tab, .timeline__row { transition: none; }
+}

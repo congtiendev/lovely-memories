@@ -1,0 +1,206 @@
+/* Bien dung chung cho ca man hinh: ti le anh, toa do o cua, nhip chuyen dong. */
+:root {
+    --r: 1.77683;                                   /* ti le anh nen 1672 / 941 */
+    --stage-w: max(100vw, calc(100svh * var(--r))); /* be ngang khung anh sau khi phu kin */
+
+    /* Toa do khung vien da ngoai cua o cua, tinh theo % anh goc */
+    --door-l: 40.40%;
+    --door-t: 45.60%;
+    --door-w: 19.00%;
+    --door-h: 49.00%;   /* day cua cham nguong o 94.60% chieu cao anh */
+
+    --swing: 72deg;   /* duoi 90 do de van thay mat truoc cham tro */
+    --dur: 1200ms;
+    --thick: 5.5%;   /* be day canh cua, tinh theo be rong canh */
+
+    /* Diem tu cua phoi canh: tam o cua, cung la huong may bay lao toi */
+    --vp-x: 50%;
+    --vp-y: 70%;
+
+    /* ---------- KHUNG TRANH ----------
+       Viet mobile-first. Man DOC dung khung da doc (frame-891w, 891x1232):
+       khung vang nam ngang neu ep vao be ngang dien thoai thi o chu chi con
+       ~254x112px, khong co cach nao nhet 456 ky tu vao do ma con doc duoc.
+       Khung doc cho o chu rong gan gap ba. Man du lon moi doi sang khung vang
+       - xem @media o cuoi file, va the <source> trong index.html phai khop.
+
+       Tren dien thoai, be ngang la canh chan thuc su, nen lay het 102vw (ria
+       khung bi cat 1%, khong thay duoc) de moi chu du 14px. */
+    --frame-r: 0.7232;
+    --frame-h: min(88svh, calc(102vw / var(--frame-r)));
+    --frame-w: calc(var(--frame-h) * var(--frame-r));
+    --frame-lift: 2svh;   /* nhac khung len khoi mat san */
+
+    /* Ba o chu tren mat khung, tinh theo % anh khung.
+       Panel long trong cua khung doc: x 16-84%, y 18-86.5%. */
+    --page-x: 17.5%;
+    --page-t: 26.5%;
+    --page-b: 19%;
+    --page-size: 0.0258;   /* nhan voi --frame-h */
+
+    --title-x: 22%;
+    --title-t: 20%;
+    --title-h: 6%;
+    --title-size: 0.03;
+
+    --start-x: 25%;
+    --start-t: 80.5%;
+    --start-h: 6.2%;
+    --start-size: 0.025;
+
+    /* TIMING.drop / lift / interludeFade trong js/config.js phai khop cac moc nay */
+    --drop-dur: 1400ms;
+    --lift-dur: 620ms;
+    --interlude-fade: 600ms;
+
+    /* ---------- PHONG KY NIEM ----------
+       Mobile-first: ban cat DOC (941x1672). Hai o tuong phang (do bang cach
+       quet net go trong anh - trong long o khong co net nao):
+       o trai x 6.6-23.3%, o phai x 76.7-93.4%, ca hai cao y 21.2-66.2%.
+       Tranh dat theo tam o, be ngang chua het long o de con thay mep tuong. */
+    --room-r: 0.5628;
+    /* Hai canh chan cua max() luon cho ra dung ti le --room-r; phan tran ra
+       ngoai viewport bi cat. Toa do tranh la % cua hop nay. */
+    --room-w: max(100vw, calc(100svh * var(--room-r)));
+    --room-h: max(100svh, calc(100vw / var(--room-r)));
+
+    --art1-cx: 14.95%;   /* tam o tuong ben trai */
+    --art1-cy: 43.7%;
+    --art1-w: 15.5%;
+    --art2-cx: 85.05%;   /* tam o tuong ben phai */
+    --art2-cy: 43.7%;
+    --art2-w: 15.5%;
+
+    /* Ngay khac tren panel duoi be tuong. Mat lom cua panel (do bang cach lay
+       do sang trung binh tung hang roi tim net go): x 37.7-62.2%, y 62.9-67.3%
+       -> tam 65.1%. Co chu bi be ngang panel chan (24.5% be ngang anh). */
+    --date-x: 38.2%;      /* hop chu trung voi bien panel */
+    --date-cy: 65.1%;
+    --date-size: 0.016;   /* nhan voi --room-h */
+    --date-track: 0.1em;  /* panel doc hep, phai bot tracking cho chu du to */
+
+    /* CHU KHAC CHIM VAO DA. Nguon sang cua ca canh nay xien tu tren trai
+       (xem .shade trong doorway.css), nen mot ranh khac se toi o thanh tren
+       va bat sang o me duoi - ba lop duoi dung dung thu tu do. Mau chu de hoi
+       trong: van da phia sau an mo qua net chu, cho ra cam giac chu nam trong
+       khoi da chu khong phai muc do len mat da.
+       Don vi em nen moi cho dung se tu can theo co chu cua no. */
+    --ink: rgba(72, 55, 35, 0.86);
+    --ink-carve:
+        0 0.035em 0.015em rgba(255, 251, 236, 0.75),        /* me duoi bat sang */
+        -0.012em -0.014em 0.012em rgba(48, 34, 19, 0.26),   /* thanh tren-trai trong toi */
+        0 0 0.07em rgba(58, 42, 24, 0.22);                  /* do sau cua ranh khac */
+}
+
+/* Phong 22-05 khong co panel duoi be tuong (khong co hoc tuong), cho khac ngay
+   la o lom giua dai wainscot. Do bang bieu do do sang tung hang: mat lom that
+   la ban doc x 22.6-76.4% y 74.1-77.7% -> tam 75.9%. (Con 79.7% do truoc day la
+   net go cua dai wainscot, khong phai mep o.)
+   O nay rong hon han phong 1 nen chu to hon va giai tracking rong hon duoc. */
+.room--scene-22-05-2026 {
+    /* Mot buc duy nhat, treo giua o tuong lon: ban doc o x 22.4-76.7%,
+       y 16.5-69.4% -> tam 49.6% / 42%. Tranh ti le 0.8968 (991x1105). */
+    --art1-cx: 49.6%;
+    --art1-cy: 42%;
+    --art1-w: 50%;   /* 92% be ngang o tuong; cao 31.4% -> y 26.3-57.7% */
+
+    --date-x: 24%;
+    --date-cy: 75.9%;
+    /* Cung co chu voi ngay o phong 1 (0.016 / 0.026): cung mot ngay thang khac
+       tren da thi phai cung mot co o moi phong. O day o lom rong hon nen chi
+       giai tracking rong ra, khong phong chu to len. */
+    --date-size: 0.016;
+    --date-track: 0.3em;
+}
+
+/* Canh 22-05 khi treo BA buc. Slot 2 luon la buc gan vuong nhat (xem
+   gallery.js). Ban doc chi co mot o tuong lon nen xep hai tren mot duoi, buc
+   vuong nam duoi va can giua. */
+.room--scene-22-05-2026.room--arts-3 {
+    --art1-cx: 35%;    --art1-cy: 32%;  --art1-w: 22%;
+    --art3-cx: 64%;    --art3-cy: 32%;  --art3-w: 22%;
+    --art2-cx: 49.55%; --art2-cy: 57%;  --art2-w: 22%;
+}
+
+/* ---------- MAN NGANG: DOI SANG BAN CAT NGANG CUA ANH PHONG ----------
+   Nguong nay phai khop <source media> cua .room trong index.html: lech nhau
+   thi tranh se treo lech khoi o tuong (toa do la % cua anh, moi ban cat mot bo).
+   Ban ngang 1672x941: o tuong trai x 13.5-28%, phai x 72-86.5%, y 13.1-71.1%. */
+@media (min-aspect-ratio: 1/1) {
+    :root {
+        --room-r: 1.7768;
+        --art1-cx: 20.75%;
+        --art1-cy: 42%;
+        --art1-w: 12.5%;
+        --art2-cx: 79.25%;
+        --art2-cy: 42%;
+        --art2-w: 12.5%;
+
+        /* Panel duoi be tuong o ban ngang: mat lom x 39.4-60.4%, y 80.2-85.4%
+           -> tam 82.8%. Do 77.3% la de be tuong, khong phai mep panel. */
+        --date-x: 39.5%;
+        --date-cy: 82.8%;
+        --date-size: 0.026;
+        --date-track: 0.26em;
+    }
+    /* Canh 22-05, ban ngang, ba buc: ba o tuong x 9.5-24.2%, 34.5-65.3%,
+       75.7-90.4%; o hai ben chi rong 14.7% nen tranh lay 12%. */
+    .room--scene-22-05-2026.room--arts-3 {
+        --art1-cx: 16.85%; --art1-cy: 44%; --art1-w: 12%;
+        --art3-cx: 83.05%; --art3-cy: 44%; --art3-w: 12%;
+        /* Buc giua rong hon de ba buc cao BANG NHAU: hai ben la anh doc ti le
+           0.667 (cao 18 don vi o be rong 12), buc giua gan vuong nen phai rong
+           ~18 moi cao bang. O tuong giua rong 30.8% nen du cho. */
+        --art2-cx: 49.9%;  --art2-cy: 44%; --art2-w: 18%;
+    }
+
+    /* Phong 22-05, ban ngang: mat lom that la x 34.3-65.1%, y 81.9-86.5%
+       -> tam 84.2%. */
+    .room--scene-22-05-2026 {
+        /* Ban ngang: o tuong giua x 34.5-65.3%, y 16.5-74.5% -> tam 49.9% / 45.5%.
+           Treo nhich len tren tam mot chut cho ngang tam mat. */
+        --art1-cx: 49.9%;
+        --art1-cy: 44%;
+        --art1-w: 26%;   /* 84% be ngang o tuong; cao 51.5% -> y 18.3-69.8% */
+
+        --date-x: 35.5%;
+        --date-cy: 84.2%;
+        --date-size: 0.026;
+        --date-track: 0.34em;
+    }
+}
+
+/* ---------- MAN DU LON: DOI SANG KHUNG VANG NAM NGANG ----------
+   Nguong nay la co man hinh nho nhat ma khung ngang con cho ra chu >= 14px:
+   font = 0.031 * frame-h, frame-h = min(66vw, 70svh) / 1.5.
+   Doi nguong thi phai sua the <source media> trong index.html cho khop, khong
+   thi anh mot ti le ma khung mot ti le khac -> khung bi keo meo. */
+@media (min-width: 760px) and (min-height: 620px) {
+    :root {
+        /* frame-02, 1536x1024. Khung nam ngang nen be ngang moi la canh chan. */
+        --frame-r: 1.5;
+        --frame-w: min(66vw, calc(70svh * var(--frame-r)));
+        --frame-h: calc(var(--frame-w) / var(--frame-r));
+        --frame-lift: 6svh;
+
+        /* Panel long trong: x 12.2-87.7%, y 31-80.4%. Hoa van bon goc lan vao
+           toi x 16.3% o y 31.5%, nen o chu bat dau tu y 33%. */
+        --page-x: 16%;
+        --page-t: 33%;
+        --page-b: 22%;
+        --page-size: 0.031;
+
+        /* O cartouche dinh khung: x 33.6-66.5%, y 15.7-23.2%; hai hoa thi vang
+           nam sat hai dau nen chu phai thu vao giua. */
+        --title-x: 38.5%;
+        --title-t: 16.2%;
+        --title-h: 6.4%;
+        --title-size: 0.032;
+
+        /* O bau duc duoi day: x 35.3-65%, y 83.7-91.7%. */
+        --start-x: 36.4%;
+        --start-t: 84.6%;
+        --start-h: 6.2%;
+        --start-size: 0.026;
+    }
+}

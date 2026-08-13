@@ -1,0 +1,175 @@
+/* ---------- O CUA ---------- */
+.doorway {
+    position: absolute;
+    left: var(--door-l);
+    top: var(--door-t);
+    width: var(--door-w);
+    height: var(--door-h);
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    perspective: calc(var(--stage-w) * 0.9);
+    transform-style: preserve-3d;
+    -webkit-tap-highlight-color: transparent;
+}
+.doorway:focus-visible { outline: 2px solid #ffd9a0; outline-offset: 4px; }
+
+/* ---------- CANH CUA ---------- */
+.leaf {
+    position: absolute;
+    top: 0;
+    width: 50%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transition: transform var(--dur) cubic-bezier(0.5, 0.02, 0.18, 1);
+}
+.leaf--l { left: 0;  transform-origin: left center; }
+.leaf--r { right: 0; transform-origin: right center; transition-delay: 80ms; }
+
+.leaf img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: fill;   /* ep vua o cua; sai lech ngang 7% (trai) / 13% (phai) */
+    backface-visibility: hidden;   /* qua 90 do thi nhuong cho mat sau */
+    /* Hoa sac voi anh nen: anh goc co sat 0.70 trong khi toan canh chi 0.30.
+       Ha bao hoa, giam tuong phan va lam mem nhe cho khop do net cua anh nen. */
+    filter:
+        saturate(0.76)
+        contrast(0.95)
+        brightness(1.01)
+        blur(0.25px)
+        drop-shadow(3px 4px 5px rgba(38, 26, 14, 0.5));
+}
+
+/* ---------- BE DAY CANH CUA ----------
+   Mot tam mong dat o me tu do, xoay 90 do de nam vuong goc voi mat cua
+   va an sau ve phia sau. Cua dong thi tam nay chieu thanh mot duong ->
+   vo hinh; cua mo thi lo ra dung bang be day that cua canh. */
+.edge {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    width: var(--thick);
+    backface-visibility: hidden;
+    background:
+        linear-gradient(to bottom, rgba(20, 13, 7, 0.5), rgba(20, 13, 7, 0) 14%),
+        linear-gradient(to right, #7a5f45, #4b3728 55%, #33251a);
+}
+.leaf--l .edge { right: 0; transform-origin: right center; transform: rotateY(-90deg); }
+.leaf--r .edge { left: 0;  transform-origin: left center;  transform: rotateY(90deg); }
+
+/* ---------- MAT SAU ----------
+   Xoay 105 do la da nhin qua 90 do, tuc dang thay lung canh cua.
+   Mat sau cua go tram thuong tron tron, khong cham tro. */
+.back {
+    position: absolute;
+    inset: 0;
+    transform: rotateY(180deg);
+    backface-visibility: hidden;
+    background:
+        repeating-linear-gradient(90deg,
+            rgba(0, 0, 0, 0.10) 0 1px, rgba(255, 255, 255, 0.02) 1px 6px),
+        linear-gradient(to bottom, rgba(18, 12, 6, 0.45), rgba(18, 12, 6, 0) 16%),
+        linear-gradient(100deg, #6a5240, #4b3829 58%, #372a1e);
+    box-shadow: inset 0 0 0 2px rgba(30, 20, 12, 0.55);
+}
+/* Hai o gia chim goi lai khung panel cua mat sau */
+.back::before, .back::after {
+    content: '';
+    position: absolute;
+    left: 12%;
+    right: 12%;
+    border-radius: 1px;
+    box-shadow:
+        inset 0 0 0 1px rgba(22, 15, 9, 0.6),
+        inset 0 2px 4px rgba(0, 0, 0, 0.35);
+}
+.back::before { top: 6%;  height: 48%; }
+.back::after  { top: 58%; height: 36%; }
+
+/* ---------- BONG DO TRONG HOC ----------
+   Bong do + huong sang, chi hien khi cua dong. */
+.shade {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    backface-visibility: hidden;
+    transition: opacity var(--dur) ease;
+    background:
+        /* man suong am cua khi quyen, keo cua ve cung tone voi canh */
+        linear-gradient(rgba(206, 190, 166, 0.06), rgba(206, 190, 166, 0.06)),
+        /* bong duoi lanh to */
+        linear-gradient(to bottom, rgba(24, 16, 9, 0.55), rgba(24, 16, 9, 0) 20%),
+        /* bong sat nguong cua */
+        linear-gradient(to top, rgba(24, 16, 9, 0.32), rgba(24, 16, 9, 0) 9%),
+        /* anh sang xien tu tren trai */
+        linear-gradient(108deg, rgba(255, 244, 222, 0.16), rgba(255, 244, 222, 0) 42%);
+}
+/* Bong ma da o canh ngoai moi la cua */
+.leaf--l .shade { background-image:
+        linear-gradient(rgba(206, 190, 166, 0.06), rgba(206, 190, 166, 0.06)),
+        linear-gradient(to bottom, rgba(24, 16, 9, 0.55), rgba(24, 16, 9, 0) 20%),
+        linear-gradient(to top, rgba(24, 16, 9, 0.32), rgba(24, 16, 9, 0) 9%),
+        linear-gradient(to right, rgba(24, 16, 9, 0.42), rgba(24, 16, 9, 0) 11%),
+        linear-gradient(108deg, rgba(255, 244, 222, 0.16), rgba(255, 244, 222, 0) 42%); }
+.leaf--r .shade { background-image:
+        linear-gradient(rgba(206, 190, 166, 0.06), rgba(206, 190, 166, 0.06)),
+        linear-gradient(to bottom, rgba(24, 16, 9, 0.55), rgba(24, 16, 9, 0) 20%),
+        linear-gradient(to top, rgba(24, 16, 9, 0.32), rgba(24, 16, 9, 0) 9%),
+        linear-gradient(to left, rgba(24, 16, 9, 0.42), rgba(24, 16, 9, 0) 11%),
+        linear-gradient(108deg, rgba(255, 244, 222, 0.10), rgba(255, 244, 222, 0) 42%); }
+
+.doorway.open .shade { opacity: 0; }
+
+/* Mo ra ngoai: canh xoay gan nhu vuong goc voi huong nhin nen mat cua
+   chi con nhan anh sang xien, toi dan ve phia ban le. */
+.leaf::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg,
+        rgba(14, 9, 4, 0.70) 0%,
+        rgba(14, 9, 4, 0.34) 55%,
+        rgba(14, 9, 4, 0.12) 100%);
+    backface-visibility: hidden;
+    opacity: 0;
+    transition: opacity var(--dur) ease;
+    pointer-events: none;
+}
+.leaf--r::after { transform: scaleX(-1); }
+
+/* ---------- KHE SANG GIUA HAI CANH ----------
+   Moi goi bam vao. */
+.seam {
+    position: absolute;
+    top: 8%;
+    left: 50%;
+    width: 2px;
+    height: 84%;
+    transform: translateX(-50%);
+    background: linear-gradient(to bottom,
+        transparent, rgba(255, 206, 132, 0.9), transparent);
+    filter: blur(1.5px);
+    animation: pulse 3.4s ease-in-out infinite;
+    pointer-events: none;
+}
+@keyframes pulse {
+    0%, 100% { opacity: 0.10; }
+    50%      { opacity: 0.60; }
+}
+
+/* ---------- TRANG THAI MO ----------
+   Mo RA NGOAI, dung voi cach cua gan tren mat ngoai khung da.
+   Mo vao trong se phai chui sau tuong va bi tru da che khuat hoan toan. */
+.doorway.open .leaf--l { transform: rotateY(calc(var(--swing) * -1)); }
+.doorway.open .leaf--r { transform: rotateY(var(--swing)); }
+.doorway.open .leaf::after { opacity: 1; }
+.doorway.open .seam { opacity: 0; animation: none; transition: opacity 350ms; }
+
+@media (prefers-reduced-motion: reduce) {
+    .leaf, .leaf::after { transition-duration: 1ms; }
+    .seam { animation: none; opacity: 0.35; }
+}

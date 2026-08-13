@@ -1,0 +1,99 @@
+/* ---------- LOP CANH SANH ---------- */
+.stage--hall {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateX(-50%) scale(1.42);
+    transition: opacity 450ms ease, visibility 0s 450ms;   /* muot khi quay lai cong */
+}
+
+/* ---------- LAO VE PHIA TRUOC ----------
+   Phong to quanh tam o cua nen moi thu no ra tu diem tu -> cam giac FPV.
+   CHI dung transform va opacity: hai thu duy nhat compositor chay duoc
+   tren GPU. Dung filter o day se buoc trinh duyet ve lai ca lop anh
+   khong lo moi khung hinh -> giat. Do mo va anh loa duoc lam bang
+   hai lop phu rieng, chi doi opacity. */
+@keyframes dolly {
+    0%   { transform: translateX(-50%) scale(1);     opacity: 1;
+           animation-timing-function: cubic-bezier(0.33, 0, 0.67, 1); }
+    13%  { transform: translateX(-50%) scale(0.976); opacity: 1;
+           animation-timing-function: cubic-bezier(0.5, 0, 0.76, 0.3); }
+    78%  { opacity: 1; }
+    100% { transform: translateX(-50%) scale(6);     opacity: 0; }
+}
+@keyframes arrive {
+    0%   { opacity: 0; transform: translateX(-50%) scale(1.42); }
+    40%  { opacity: 1; }
+    100% { opacity: 1; transform: translateX(-50%) scale(1); }
+}
+/* Toi dan bon ria khung hinh giua luc bay nhanh nhat */
+@keyframes rush  { 0% { opacity: 0 } 58% { opacity: 0.55 } 100% { opacity: 0 } }
+/* Loa sang dung luc giao canh, che luon cho anh cong bi phong to vo net */
+@keyframes flare { 0% { opacity: 0 } 55% { opacity: 0.10 } 82% { opacity: 0.60 } 100% { opacity: 0 } }
+
+/* Thang lop GPU ngay tu luc cua bat dau mo, tuc 1.5s truoc khi bay.
+   Neu de den dung luc animation khoi dong moi thang lop thi cai khung
+   dau tien se khuc mot nhip - dung cho de lo nhat. */
+.arming .stage--gate,
+.arming .stage--hall,
+.arming .flare,
+.arming .vignette { will-change: transform, opacity; }
+
+.flying .stage--gate {
+    animation: dolly 1900ms linear forwards;   /* nhip do nam trong keyframes */
+}
+.flying .stage--hall {
+    visibility: visible;
+    animation: arrive 2400ms cubic-bezier(0.14, 0.8, 0.2, 1) 980ms forwards;
+}
+
+/* ---------- HAI LOP PHU TOAN MAN ---------- */
+.flare, .vignette {
+    position: fixed;
+    inset: 0;
+    opacity: 0;
+    pointer-events: none;
+    backface-visibility: hidden;
+}
+.flare {
+    background: radial-gradient(circle at var(--vp-x) var(--vp-y),
+        rgba(255, 250, 240, 0.98) 0%,
+        rgba(255, 243, 224, 0.72) 26%,
+        rgba(255, 238, 214, 0) 62%);
+}
+.vignette {
+    background: radial-gradient(circle at var(--vp-x) var(--vp-y),
+        rgba(26, 18, 10, 0) 22%,
+        rgba(26, 18, 10, 0.45) 68%,
+        rgba(20, 13, 7, 0.85) 100%);
+}
+.flying .flare    { animation: flare 1900ms ease-in forwards; will-change: opacity; }
+.flying .vignette { animation: rush  1900ms ease-out forwards; will-change: opacity; }
+
+/* Xong hanh trinh thi go lop cong ra khoi mach ve */
+.arrived .stage--gate { display: none; }
+.arrived .flare, .arrived .vignette { display: none; }
+
+/* Trang thai cuoi cua sanh, viet rieng ra khong dua vao animation:
+   mo bang URL thi chi co class `arrived` va khong dien lai chuyen canh.
+   Bo tre visibility cua base de anh hien ngay roi moi hoa dan. */
+.arrived .stage--hall {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) scale(1);
+    pointer-events: auto;
+    cursor: pointer;
+    transition: opacity 450ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    /* Khong lao, chi hoa mo hai canh cho nhau */
+    .flying .stage--gate {
+        animation: none; opacity: 0; transition: opacity 450ms ease;
+    }
+    .flying .stage--hall {
+        animation: none; opacity: 1;
+        transform: translateX(-50%) scale(1);
+    }
+    .flying .flare, .flying .vignette { animation: none; }
+}

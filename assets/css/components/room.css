@@ -1,0 +1,256 @@
+/* ---------- PHONG KY NIEM ----------
+   .room la lop mo man phu kin viewport; .room__scene ben trong giu DUNG ti le
+   anh phong (giong .stage o man cong). Phai giu ti le vi tranh duoc treo theo
+   % cua anh: neu de object-fit cat tuy y thi tranh se troi ra khoi o tuong.
+   Hai canh chan cua max() luon cho ra dung ti le --room-r, phan tran ra ngoai
+   viewport bi cat - neo day giua nen phan cat luon la tran/hai ben, khong bao
+   gio cat mat san hay o tuong.
+
+   Nam TRUOC .letter trong index.html: bam "Bat dau" thi khung tranh phai
+   duoc nhin thay dang nhac len phia truoc canh phong dang hien dan. */
+.room {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 700ms ease, visibility 0s 700ms;
+}
+
+.room__scene {
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    width: var(--room-w);
+    height: var(--room-h);
+    /* Vao phong thi canh lui ve dung co, cho cam giac dang buoc toi truoc mat.
+       Dung thuoc tinh `scale` rieng chu khong nhoi vao `transform`: het hieu
+       ung thi scale ve 1 va the nay khong con la stacking context, nho vay
+       z-index cua lop xem tranh moi troi len tren duoc. */
+    translate: -50% 0;
+    scale: 1.06;
+    transition: scale 1500ms cubic-bezier(0.16, 0.7, 0.2, 1);
+    backface-visibility: hidden;
+}
+
+.room__bg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;   /* hop da dung ti le anh nen day chi la lam tron so */
+}
+
+.room.is-open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    cursor: pointer;
+    transition: opacity 700ms ease;   /* bo tre visibility khi di vao */
+}
+.room.is-open .room__scene { scale: 1; }
+
+/* ---------- TRANH TREN TUONG ----------
+   Dat theo tam: left/top la tam buc tranh, `translate` keo lui nua kich thuoc.
+   Dung thuoc tinh `translate` de danh rieng `transform` cho luc phong to.
+   Toa do o tokens.css, moi ban cat anh mot bo. */
+.room__art {
+    position: absolute;
+    left: var(--art-cx);
+    top: var(--art-cy);
+    width: var(--art-w);
+    translate: -50% -50%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    line-height: 0;
+    cursor: zoom-in;
+    -webkit-tap-highlight-color: transparent;
+    /* HOA SAC VOI CANH PHONG (chi ban treo tren tuong; ban trong lop xem giu
+       nguyen anh goc de con doc duoc).
+       Ruot tranh la anh chup man hinh: nen den tuyet doi, chu trang, bong bong
+       xanh - dat tren buc tuong kem thi noi bat nhu mot mieng dan. Ha tuong
+       phan de day den len thanh nau tham, giam bao hoa cho bong bong xanh
+       khong choi, them chut sepia keo ve tong am cua canh, va lam mem 0.12px
+       cho khop do net cua anh phong.
+
+       `contrast` la num can duy nhat can dong: 1.0 = anh goc, den tuyet doi,
+       noi bat nhu mieng dan; 0.82 (dang dung) day day den len ~25/255, dam
+       nhung khong con gat; duoi 0.7 la bat dau bac mau, trong nhu tranh cu
+       phai nang. Cuoi cung moi den bong do de buc tranh co cho dua vao tuong:
+
+       drop-shadow chi nhan <length>, dua % vao la CA khoi filter bi coi la sai
+       va bi bo - mat luon phan hoa sac. Dung vmin de bong van co gian theo
+       khung man hinh. */
+    filter:
+        contrast(0.82)
+        brightness(1.02)
+        saturate(0.88)
+        sepia(0.12)
+        blur(0.12px)
+        drop-shadow(0 0.35vmin 0.7vmin rgba(28, 18, 8, 0.5));
+    /* Treo len: hien dan va ha nhe xuong dung cho */
+    opacity: 0;
+    transform: translateY(-1.5%) scale(0.99);
+    transition: opacity 700ms ease, transform 850ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.room__art img {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+.room__art:focus-visible {
+    outline: 2px solid #e8c98a;
+    outline-offset: 0.6em;
+}
+
+.room__art--1 { --art-cx: var(--art1-cx); --art-cy: var(--art1-cy); --art-w: var(--art1-w); }
+.room__art--2 { --art-cx: var(--art2-cx); --art-cy: var(--art2-cy); --art-w: var(--art2-w); }
+.room__art--3 { --art-cx: var(--art3-cx); --art-cy: var(--art3-cy); --art-w: var(--art3-w); }
+
+/* Treo lan luot, sau khi canh phong da hien */
+.room.is-open .room__art { opacity: 1; transform: none; }
+.room.is-open .room__art--1 { transition-delay: 420ms; }
+.room.is-open .room__art--2 { transition-delay: 680ms; }
+.room.is-open .room__art--3 { transition-delay: 940ms; }
+
+/* ---------- NGAY KHAC DUOI BE TUONG ----------
+   Khac chim vao panel da duoi hoc tuong, dung dung cong thuc voi chu tren
+   khung tranh (--ink / --ink-carve trong tokens.css): mat da o day cung la da
+   sang va cung mot nguon sang xien tu tren trai. */
+.room__date {
+    position: absolute;
+    left: var(--date-x);
+    right: var(--date-x);
+    top: var(--date-cy);
+    /* Can giua theo TAM QUANG HOC cua day chu so, khong phai tam hop dong:
+       hop dong con chua cho cho phan chan chu (g, y) ma chu so khong dung den,
+       nen neo -50% se lam day so nhin nhu bi cao len. line-height: 1 rut hop
+       ve dung mot em, roi day xuong 0.07em cho khop tam thi giac. */
+    line-height: 1;
+    translate: 0 calc(-50% + 0.07em);
+    display: block;
+    text-align: center;
+    font-family: 'EB Garamond', Georgia, 'Times New Roman', serif;
+    font-size-adjust: ex-height 0.44;
+    font-weight: 500;
+    font-size: calc(var(--room-h) * var(--date-size));
+    letter-spacing: var(--date-track);
+    text-indent: var(--date-track);   /* bu tracking thua ben phai cho can giua */
+    white-space: nowrap;
+    color: var(--ink);
+    text-shadow: var(--ink-carve);
+    opacity: 0;
+    transition: opacity 800ms ease;
+}
+.room.is-open .room__date {
+    opacity: 1;
+    transition-delay: 240ms;   /* hien truoc hai buc tranh */
+}
+
+/* ---------- LOI DI TIEP ----------
+   Khong khac vao tuong nhu ngay thang: chu nay la loi chi duong, khong phai
+   mot phan cua kien truc. Neo o day man hinh nen dung duoc cho moi phong va
+   moi ban cat anh, khong can bo toa do rieng.
+   San nha moi phong mot mau (da o phong nay, go o phong sau) nen chu phai tu
+   mang bong rieng de doc duoc tren ca hai. */
+.room__next {
+    position: absolute;
+    left: 50%;
+    bottom: 5.5%;
+    translate: -50% 0;
+    margin: 0;
+    padding: 0.7em 1.4em;
+    border: 0;
+    background: none;
+    font-family: 'EB Garamond', Georgia, 'Times New Roman', serif;
+    font-size-adjust: ex-height 0.44;
+    font-weight: 500;
+    font-size: clamp(0.85rem, 1.7vmin, 1.25rem);
+    letter-spacing: 0.24em;
+    text-indent: 0.24em;
+    text-transform: uppercase;
+    color: #f8eed9;
+    /* Vien toi bao quanh chu truoc, roi moi den quang vang: san phong nay la
+       da sang, phong sau la go toi - chu kem chi doc duoc tren ca hai khi tu
+       mang mot vien toi rieng. */
+    text-shadow:
+        0 0 0.3em rgba(24, 15, 6, 0.95),
+        0 0.05em 0.12em rgba(18, 11, 5, 0.9),
+        0 0 1em rgba(255, 206, 128, 0.45);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 700ms ease, color 220ms ease, transform 140ms ease;
+    -webkit-tap-highlight-color: transparent;
+}
+.room.is-open .room__next {
+    opacity: 1;
+    transition-delay: 900ms;   /* sau khi tranh da treo xong */
+    animation: nextGlow 3s ease-in-out 1.6s infinite;
+}
+@keyframes nextGlow {
+    0%, 100% { text-shadow: 0 0 0.3em rgba(24, 15, 6, 0.95),
+                            0 0.05em 0.12em rgba(18, 11, 5, 0.9),
+                            0 0 1em rgba(255, 206, 128, 0.3); }
+    50%      { text-shadow: 0 0 0.3em rgba(24, 15, 6, 0.95),
+                            0 0.05em 0.12em rgba(18, 11, 5, 0.9),
+                            0 0 1.7em rgba(255, 216, 152, 0.8); }
+}
+.room__next:hover { color: #fff8e8; }
+.room__next:active { transform: translateY(0.08em); }
+.room__next:focus-visible { outline: 2px solid #e8c98a; outline-offset: 0.3em; border-radius: 999px; }
+
+/* ---------- LOP XEM TRANH ----------
+   Bam vao tranh thi mo o day, khong phong to buc tren tuong: nho vay tranh
+   tren tuong chi can tai ban nho, con ban lon chi tai khi thuc su can xem. */
+.room__viewer {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    display: grid;
+    place-items: center;
+    padding: 4vmin;
+    /* Mau lay tu chinh anh phong: trung binh vung tuong la #ab947b, ha xuong
+       42% do sang de con tuong phan voi buc tranh (noi dung tranh la man hinh
+       den). Nho vay lop nen la mot lop toi CUNG TONG voi canh, khong phai mot
+       tam den lac ra khoi bang mau. Them lam mo hau canh cho ra chieu sau. */
+    background: rgba(71, 62, 51, 0.86);
+    backdrop-filter: blur(8px) saturate(0.92);
+    -webkit-backdrop-filter: blur(8px) saturate(0.92);
+    opacity: 0;
+    visibility: hidden;
+    cursor: zoom-out;
+    transition: opacity 420ms ease, visibility 0s 420ms;
+}
+.room__viewer img {
+    /* Don vi viewport chu KHONG dung 100%: % phai tra ve chieu cao hang grid,
+       ma hang do lai tu co theo noi dung -> vong tron, trinh duyet bo qua va
+       anh tran ra ngoai man hinh. */
+    max-width: 92vw;
+    max-height: 90svh;
+    width: auto;
+    height: auto;
+    transform: scale(0.965);
+    transition: transform 480ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    filter: drop-shadow(0 2vh 4vh rgba(0, 0, 0, 0.6));
+}
+.room.art-open .room__viewer {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 420ms ease;
+}
+.room.art-open .room__viewer img { transform: none; }
+
+@media (prefers-reduced-motion: reduce) {
+    /* Cat canh thang, khong mo man, khong lui canh, khong ha tranh */
+    .room, .room.is-open { transition: none; }
+    .room__scene { scale: 1; transition: none; }
+    /* Hien ngay, khong ha xuong va khong cho lan luot */
+    .room__art, .room__date, .room__next { transform: none; transition: none; }
+    .room.is-open .room__art,
+    .room.is-open .room__date,
+    .room.is-open .room__next { transition-delay: 0s; animation: none; }
+    .room__viewer, .room__viewer img { transition: none; }
+    .room__viewer img { transform: none; }
+}

@@ -1,0 +1,50 @@
+/* ---------- MAN CHUYEN CHUONG ----------
+   Vua la tam bien "2 thang sau" ngan hai chuong, vua la man cho: no phu kin
+   man hinh trong luc anh phong ke tiep duoc tai va giai ma, nen nguoi doc
+   khong bao gio thay canh moi hien ra nua voi.
+   Mau nen lay cung ho voi lop xem tranh (trung binh vung tuong ha do sang) de
+   ca trang chi co mot bang mau. */
+.interlude {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    display: grid;
+    place-items: center;
+    background: rgb(38, 31, 24);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity var(--interlude-fade) ease, visibility 0s var(--interlude-fade);
+}
+.interlude.is-on {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;   /* chan bam vao canh dang doi phia sau */
+    transition: opacity var(--interlude-fade) ease;
+}
+
+/* Chu tren nen toi thi khong khac chim duoc nua: nguon sang phia truoc, chu
+   noi len khoi mat toi - nen mot vien sang mo thay cho hai lop ranh khac. */
+.interlude__text {
+    margin: 0;
+    font-family: 'EB Garamond', Georgia, 'Times New Roman', serif;
+    font-size-adjust: ex-height 0.44;
+    font-weight: 500;
+    font-size: clamp(1.15rem, 3.2vmin, 2.1rem);
+    letter-spacing: 0.34em;
+    text-indent: 0.34em;   /* bu tracking thua ben phai cho can giua */
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: #f4e7cd;
+    text-shadow: 0 0 1.2em rgba(255, 214, 150, 0.45);
+    /* Chu tro len tu duoi, cham hon lop nen mot nhip */
+    opacity: 0;
+    transform: translateY(0.4em);
+    transition: opacity 900ms ease 180ms, transform 1100ms cubic-bezier(0.2, 0.8, 0.2, 1) 180ms;
+}
+.interlude.is-on .interlude__text { opacity: 1; transform: none; }
+
+@media (prefers-reduced-motion: reduce) {
+    .interlude, .interlude.is-on { transition: none; }
+    .interlude__text { transform: none; transition: none; }
+}
