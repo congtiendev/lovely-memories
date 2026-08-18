@@ -16,6 +16,9 @@
     <link rel="stylesheet" href="assets/css/components/room.css">
     <link rel="stylesheet" href="assets/css/components/interlude.css">
     <link rel="stylesheet" href="assets/css/components/timeline.css">
+    <link rel="stylesheet" href="assets/css/components/strip.css">
+    <link rel="stylesheet" href="assets/css/components/sound.css">
+    <link rel="stylesheet" href="assets/css/components/tour.css">
 
     <script type="module" src="assets/js/main.js"></script>
 </head>
@@ -23,10 +26,11 @@
     <!-- ---------- CONG: anh nen + o cua bam duoc ---------- -->
     <div class="stage stage--gate">
         <img class="bg"
-             src="assets/images/memory-05-1440w.webp"
-             srcset="assets/images/memory-05-960w.webp 960w,
-                     assets/images/memory-05-1440w.webp 1440w,
-                     assets/images/memory-05.webp 1672w"
+             src="assets/images/background/gate-1440w.webp"
+             srcset="assets/images/background/gate-480w.webp 480w,
+                     assets/images/background/gate-960w.webp 960w,
+                     assets/images/background/gate-1440w.webp 1440w,
+                     assets/images/background/gate-1672w.webp 1672w"
              sizes="100vw"
              width="1672" height="941"
              fetchpriority="high" decoding="async" alt="">
@@ -57,10 +61,11 @@
     <!-- ---------- SANH: diem den sau khi bay qua o cua ---------- -->
     <div class="stage stage--hall">
         <img class="bg"
-             src="assets/images/memory-06-1440w.webp"
-             srcset="assets/images/memory-06-960w.webp 960w,
-                     assets/images/memory-06-1440w.webp 1440w,
-                     assets/images/memory-06.webp 1672w"
+             src="assets/images/background/hall-1440w.webp"
+             srcset="assets/images/background/hall-480w.webp 480w,
+                     assets/images/background/hall-960w.webp 960w,
+                     assets/images/background/hall-1440w.webp 1440w,
+                     assets/images/background/hall-1672w.webp 1672w"
              sizes="100vw"
              width="1672" height="941"
              fetchpriority="low" decoding="async" alt="">
@@ -96,8 +101,55 @@
                  sizes="50vmin" width="1024" height="1536"
                  fetchpriority="low" decoding="async" alt="">
             <ul class="timeline__rows"></ul>
+            <span class="timeline__more" aria-hidden="true"></span>
         </div>
     </nav>
+
+    <!-- ---------- DOI CHE DO XEM: trinh chieu / cuon ngang ---------- -->
+    <div class="mode" lang="vi">
+        <button class="mode__btn" type="button" aria-expanded="false" aria-controls="mode-panel">
+            <img src="assets/images/timeline-tab-480w.webp"
+                 srcset="assets/images/timeline-tab-480w.webp 480w,
+                         assets/images/timeline-tab-720w.webp 720w"
+                 sizes="17vmin" width="1535" height="616"
+                 fetchpriority="low" decoding="async" alt="">
+            <span class="mode__label">Chế độ xem</span>
+        </button>
+
+        <div class="mode__panel" id="mode-panel">
+            <button class="mode__choice" type="button" data-mode="show">
+                <span class="mode__name">Trình chiếu</span>
+                <span class="mode__desc">Mỗi lúc một căn phòng. Bấm <b>TIẾP</b> để sang
+                    kỷ niệm sau, bấm vào tường để lùi lại.</span>
+            </button>
+            <button class="mode__choice" type="button" data-mode="strip">
+                <span class="mode__name">Cuộn ngang</span>
+                <span class="mode__desc">Các phòng nối thành một dải. Lăn chuột hoặc
+                    nhấn giữ rồi kéo sang ngang; trên điện thoại thì vuốt ngang
+                    (máy cần xoay ngang).</span>
+            </button>
+            <button class="mode__tour" type="button">Xem lại hướng dẫn</button>
+        </div>
+    </div>
+
+    <!-- ---------- NHAC NEN ----------
+         preload="none": ban nhac nang, chi tai khi nguoi doc bam mo cua.
+         Nut loa chi hien ra sau khi nhac da bat (truoc do khong co gi de tat). -->
+    <audio class="music" src="assets/audios/theme.mp3" loop preload="none"></audio>
+    <button class="sound" type="button" hidden aria-pressed="true" aria-label="Tắt nhạc nền">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path class="sound__horn" d="M4 9.5h3.2L12 5.4v13.2L7.2 14.5H4z"/>
+            <path class="sound__wave sound__wave--near" d="M15.2 9.4a3.6 3.6 0 0 1 0 5.2"/>
+            <path class="sound__wave sound__wave--far" d="M17.6 7.1a7 7 0 0 1 0 9.8"/>
+            <path class="sound__cross" d="M15.6 9.6l5 4.8M20.6 9.6l-5 4.8"/>
+        </svg>
+    </button>
+
+    <!-- Hien khi vao che do cuon ngang tren may dang dung ma khong khoa duoc huong -->
+    <div class="rotate-hint" lang="vi">
+        <span class="rotate-hint__icon" aria-hidden="true">▭</span>
+        <p>Xoay ngang máy để xem dải kỷ niệm</p>
+    </div>
 
     <!-- ---------- MAN CHUYEN CHUONG ----------
          Vua la tam bien ngan hai chuong, vua la man cho tai anh phong sau. -->
@@ -128,8 +180,28 @@
             </picture>
             <h1 class="letter__title">Lời ngỏ</h1>
             <div class="letter__page"></div>
-            <!-- Nam trong o bau duc duoi day khung, chi hien khi khac xong chu -->
-            <button class="letter__start" type="button">Bắt đầu</button>
+            <!-- Nam trong o bau duc duoi day khung. Mot nut, hai viec: dang go
+                 chu thi la "Bỏ qua" (hien het chu ngay), go xong thi thanh
+                 "Bắt đầu" (mo phong ky niem dau tien). -->
+            <button class="letter__start" type="button">
+                <span class="letter__word letter__word--skip">Bỏ qua</span>
+                <span class="letter__word letter__word--go">Bắt đầu</span>
+            </button>
+        </div>
+    </div>
+    <!-- ---------- TOUR HUONG DAN ----------
+         Chay mot lan khi lan dau vao mot phong. Noi dung tung buoc o TOUR trong
+         js/content.js; o day chi la cai khung. -->
+    <div class="tour" lang="vi" hidden>
+        <div class="tour__spot"></div>
+        <div class="tour__card">
+            <p class="tour__count"></p>
+            <h2 class="tour__title"></h2>
+            <p class="tour__text"></p>
+            <div class="tour__nav">
+                <button class="tour__skip" type="button">Bỏ qua</button>
+                <button class="tour__next" type="button">Tiếp</button>
+            </div>
         </div>
     </div>
 </body>

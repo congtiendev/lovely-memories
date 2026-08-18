@@ -1,0 +1,118 @@
+/* ---------- TOUR HUONG DAN ----------
+   Mot vien sang chay quanh thu dang duoc noi toi, phan con lai cua man hinh bi
+   ha toi xuong. Ha toi bang box-shadow tran ra 100vmax tu chinh o sang: mot the
+   duy nhat vua khoet lo vua phu toi, khong can lop mask nao.
+   Lop phu nam tren tat ca (nut loa z-index 60 la cao nhat con lai). */
+.tour {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    /* Ha toi la chuyen cua mat, khong phai cua tay: lop nay KHONG bat cu bam
+       nao. Moi nut tren trang van bam duoc binh thuong trong luc tour dang
+       chay - khong co cai gi "nhin thay ma khong bam duoc". */
+    pointer-events: none;
+}
+.tour[hidden] { display: none; }
+
+.tour__spot {
+    position: fixed;
+    pointer-events: none;
+    border: 1px solid rgba(240, 214, 158, 0.55);
+    box-shadow:
+        0 0 0 100vmax rgba(16, 11, 5, 0.5),    /* phan man hinh con lai */
+        0 0 2.4vmin rgba(255, 214, 148, 0.35),
+        inset 0 0 2vmin rgba(255, 224, 170, 0.22);
+    transition: left 320ms ease, top 320ms ease,
+                width 320ms ease, height 320ms ease, border-radius 320ms ease;
+}
+
+/* Tam the chu: cung chat lieu voi khung tranh trong sanh - mat giay a, chu
+   khac chim (--ink / --ink-carve trong tokens.css), vien vang mong. */
+.tour__card {
+    position: fixed;
+    pointer-events: auto;
+    width: min(21rem, 82vw);
+    padding: 1.15rem 1.3rem 1rem;
+    border: 1px solid rgba(198, 162, 96, 0.6);
+    border-radius: 0.55rem;
+    background:
+        linear-gradient(rgba(255, 250, 236, 0.96), rgba(243, 232, 208, 0.96));
+    box-shadow: 0 1.2vmin 3vmin rgba(14, 9, 4, 0.5);
+    font-family: 'EB Garamond', Georgia, 'Times New Roman', serif;
+    font-size-adjust: ex-height 0.44;
+    color: var(--ink);
+    transition: left 320ms ease, top 320ms ease;
+}
+
+.tour__count {
+    margin: 0 0 0.15rem;
+    font-size: 0.72rem;
+    letter-spacing: 0.22em;
+    color: rgba(122, 96, 58, 0.85);
+}
+.tour__title {
+    margin: 0 0 0.35rem;
+    font-size: 1.22rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-shadow: var(--ink-carve);
+}
+.tour__text {
+    margin: 0;
+    font-size: 0.98rem;
+    line-height: 1.5;
+}
+
+.tour__nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 0.9rem;
+}
+.tour__skip,
+.tour__next {
+    margin: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    letter-spacing: 0.16em;
+    text-indent: 0.16em;
+    text-transform: uppercase;
+    color: inherit;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+.tour__skip {
+    padding: 0.3em 0;
+    font-size: 0.78rem;
+    opacity: 0.62;
+    transition: opacity 200ms ease;
+}
+.tour__skip:hover { opacity: 1; }
+.tour__next {
+    padding: 0.42em 1.15em;
+    border: 1px solid rgba(198, 162, 96, 0.7);
+    border-radius: 999px;
+    font-size: 0.82rem;
+    /* Cung vung sang nhu nut "Bat dau" tren khung loi ngo, de hai cai doc ra
+       la cung mot loai nut. */
+    background: radial-gradient(115% 150% at 50% 45%,
+        rgba(255, 224, 158, 0.5),
+        rgba(255, 198, 112, 0.14) 60%,
+        rgba(255, 190, 100, 0) 82%);
+    transition: background 220ms ease, transform 140ms ease;
+}
+.tour__next:hover {
+    background: radial-gradient(115% 150% at 50% 45%,
+        rgba(255, 232, 176, 0.75),
+        rgba(255, 202, 120, 0.24) 60%,
+        rgba(255, 190, 100, 0) 84%);
+}
+.tour__next:active { transform: translateY(0.06em); }
+.tour__skip:focus-visible,
+.tour__next:focus-visible { outline: 2px solid #c8a15a; outline-offset: 0.3em; }
+
+@media (prefers-reduced-motion: reduce) {
+    .tour__spot, .tour__card { transition: none; }
+}

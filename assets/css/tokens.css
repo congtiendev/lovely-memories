@@ -64,20 +64,10 @@
     --room-w: max(100vw, calc(100svh * var(--room-r)));
     --room-h: max(100svh, calc(100vw / var(--room-r)));
 
-    --art1-cx: 14.95%;   /* tam o tuong ben trai */
-    --art1-cy: 43.7%;
-    --art1-w: 15.5%;
-    --art2-cx: 85.05%;   /* tam o tuong ben phai */
-    --art2-cy: 43.7%;
-    --art2-w: 15.5%;
-
-    /* Ngay khac tren panel duoi be tuong. Mat lom cua panel (do bang cach lay
-       do sang trung binh tung hang roi tim net go): x 37.7-62.2%, y 62.9-67.3%
-       -> tam 65.1%. Co chu bi be ngang panel chan (24.5% be ngang anh). */
-    --date-x: 38.2%;      /* hop chu trung voi bien panel */
-    --date-cy: 65.1%;
-    --date-size: 0.016;   /* nhan voi --room-h */
-    --date-track: 0.1em;  /* panel doc hep, phai bot tracking cho chu du to */
+    /* KHONG dat toa do tranh o :root nua: bien o day duoc moi phong ke thua,
+       ma :root la to tien xa nhat - chi can mot --artN-w sot lai la no che het
+       cac bo cuc tinh theo chieu cao cua cac canh khac. Moi canh tu khai bao
+       toa do cua minh o duoi. */
 
     /* CHU KHAC CHIM VAO DA. Nguon sang cua ca canh nay xien tu tren trai
        (xem .shade trong doorway.css), nen mot ranh khac se toi o thanh tren
@@ -92,17 +82,29 @@
         0 0 0.07em rgba(58, 42, 24, 0.22);                  /* do sau cua ranh khac */
 }
 
+/* Canh room-statue (sanh co hoc tuong): hai o tuong hai ben, ban doc.
+   O trai x 6.6-23.3%, o phai x 76.7-93.4%, ca hai cao y 21.2-66.2%.
+   Ngay khac tren panel da duoi be tuong: x 37.7-62.2%, y 62.9-67.3% -> tam 65.1%. */
+.room--scene-room-statue {
+    --date-x: 38.2%;
+    --date-cy: 65.1%;
+    --date-size: 0.016;
+    --date-track: 0.1em;   /* panel doc hep, phai bot tracking cho chu du to */
+}
+
 /* Phong 22-05 khong co panel duoi be tuong (khong co hoc tuong), cho khac ngay
    la o lom giua dai wainscot. Do bang bieu do do sang tung hang: mat lom that
    la ban doc x 22.6-76.4% y 74.1-77.7% -> tam 75.9%. (Con 79.7% do truoc day la
    net go cua dai wainscot, khong phai mep o.)
    O nay rong hon han phong 1 nen chu to hon va giai tracking rong hon duoc. */
-.room--scene-22-05-2026 {
+.room--scene-room-panels {
     /* Mot buc duy nhat, treo giua o tuong lon: ban doc o x 22.4-76.7%,
-       y 16.5-69.4% -> tam 49.6% / 42%. Tranh ti le 0.8968 (991x1105). */
-    --art1-cx: 49.6%;
-    --art1-cy: 42%;
-    --art1-w: 50%;   /* 92% be ngang o tuong; cao 31.4% -> y 26.3-57.7% */
+       y 16.5-69.4% -> tam 49.6% / 42%.
+       O nay dung chung cho nhieu ky niem, ma cac buc co ti le rat khac nhau
+       (0.68 den 1.0). Neu co dinh be ngang thi buc cao se vong len gap ruoi
+       buc gan vuong, nen o day co dinh CHIEU CAO (--art1-h, ti le cua chieu cao
+       canh) va suy ra be ngang tu ti le that cua buc (--art-ar do gallery.js
+       gan vao). Van chan be ngang toi da de buc rong khong tran khoi o tuong. */
 
     --date-x: 24%;
     --date-cy: 75.9%;
@@ -116,53 +118,35 @@
 /* Canh 22-05 khi treo BA buc. Slot 2 luon la buc gan vuong nhat (xem
    gallery.js). Ban doc chi co mot o tuong lon nen xep hai tren mot duoi, buc
    vuong nam duoi va can giua. */
-.room--scene-22-05-2026.room--arts-3 {
-    --art1-cx: 35%;    --art1-cy: 32%;  --art1-w: 22%;
-    --art3-cx: 64%;    --art3-cy: 32%;  --art3-w: 22%;
-    --art2-cx: 49.55%; --art2-cy: 57%;  --art2-w: 22%;
-}
+
+/* Canh 22-05 khi treo BON buc: ban doc xep luoi 2x2 trong o tuong lon. */
+
+
+
+/* Vi tri treo tranh khong viet o day: moi nen mot cau truc nen bo cuc do
+   js/layout.js tu tinh tu cac khoang tuong khai bao trong WALLS. O day chi con
+   vi tri chu ngay khac, vi moi nen mot cho trong khac nhau. */
 
 /* ---------- MAN NGANG: DOI SANG BAN CAT NGANG CUA ANH PHONG ----------
-   Nguong nay phai khop <source media> cua .room trong index.html: lech nhau
-   thi tranh se treo lech khoi o tuong (toa do la % cua anh, moi ban cat mot bo).
-   Ban ngang 1672x941: o tuong trai x 13.5-28%, phai x 72-86.5%, y 13.1-71.1%. */
+   Nguong nay phai khop <source media> cua .room trong index.html: lech nhau thi
+   anh mot ti le ma hop canh mot ti le -> canh bi phong to va cat lung tung.
+   Khoi nay tung bi xoa nham mot lan: khi do man ngang van dung ti le anh ban
+   DOC (0.5628) nen chieu cao canh vot len gap ruoi man hinh. */
 @media (min-aspect-ratio: 1/1) {
-    :root {
-        --room-r: 1.7768;
-        --art1-cx: 20.75%;
-        --art1-cy: 42%;
-        --art1-w: 12.5%;
-        --art2-cx: 79.25%;
-        --art2-cy: 42%;
-        --art2-w: 12.5%;
+    :root { --room-r: 1.7768; }
 
-        /* Panel duoi be tuong o ban ngang: mat lom x 39.4-60.4%, y 80.2-85.4%
-           -> tam 82.8%. Do 77.3% la de be tuong, khong phai mep panel. */
+    /* Canh room-statue: panel khac ngay duoi be tuong, mat lom x 39.4-60.4%,
+       y 80.2-85.4% -> tam 82.8% (77.3% la de be tuong, khong phai mep panel). */
+    .room--scene-room-statue {
         --date-x: 39.5%;
         --date-cy: 82.8%;
         --date-size: 0.026;
         --date-track: 0.26em;
     }
-    /* Canh 22-05, ban ngang, ba buc: ba o tuong x 9.5-24.2%, 34.5-65.3%,
-       75.7-90.4%; o hai ben chi rong 14.7% nen tranh lay 12%. */
-    .room--scene-22-05-2026.room--arts-3 {
-        --art1-cx: 16.85%; --art1-cy: 44%; --art1-w: 12%;
-        --art3-cx: 83.05%; --art3-cy: 44%; --art3-w: 12%;
-        /* Buc giua rong hon de ba buc cao BANG NHAU: hai ben la anh doc ti le
-           0.667 (cao 18 don vi o be rong 12), buc giua gan vuong nen phai rong
-           ~18 moi cao bang. O tuong giua rong 30.8% nen du cho. */
-        --art2-cx: 49.9%;  --art2-cy: 44%; --art2-w: 18%;
-    }
 
-    /* Phong 22-05, ban ngang: mat lom that la x 34.3-65.1%, y 81.9-86.5%
+    /* Canh room-panels: o lom giua dai wainscot x 34.3-65.1%, y 81.9-86.5%
        -> tam 84.2%. */
-    .room--scene-22-05-2026 {
-        /* Ban ngang: o tuong giua x 34.5-65.3%, y 16.5-74.5% -> tam 49.9% / 45.5%.
-           Treo nhich len tren tam mot chut cho ngang tam mat. */
-        --art1-cx: 49.9%;
-        --art1-cy: 44%;
-        --art1-w: 26%;   /* 84% be ngang o tuong; cao 51.5% -> y 18.3-69.8% */
-
+    .room--scene-room-panels {
         --date-x: 35.5%;
         --date-cy: 84.2%;
         --date-size: 0.026;

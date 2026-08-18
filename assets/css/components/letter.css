@@ -180,16 +180,28 @@
     -webkit-tap-highlight-color: transparent;
 }
 
+/* Hai chu nam chong len nhau trong cung mot o luoi: doi chu thi be ngang nut
+   khong nhay va van dung giua o bau duc. */
+.letter__word { grid-area: 1 / 1; }
+.letter__word--go { display: none; }
+.letter.is-read .letter__word--skip { display: none; }
+.letter.is-read .letter__word--go { display: block; }
+
 /* Hien ra roi tho sang lien tuc de nguoi doc biet la bam duoc.
    Phan hien ra dung transition chu khong dung animation: trang thai hien la
    mot khai bao that, khong phai keyframe cuoi cua animation - animation
    khong chay (thiet bi yeu, timeline bi dung) thi nut van phai hien. */
+.letter.is-writing .letter__start,
 .letter.is-read .letter__start {
     visibility: visible;
     opacity: 1;
     transform: none;
-    animation: beacon 2.6s ease-in-out 520ms infinite;
 }
+/* Dang go chu thi nut chi la loi thoat, de mo hon mot chut va KHONG tho sang:
+   quang sang la loi moi bam de di tiep, danh cho luc da doc xong. */
+.letter.is-writing:not(.is-read) .letter__start { opacity: 0.72; }
+.letter.is-writing:not(.is-read) .letter__start:hover { opacity: 1; }
+.letter.is-read .letter__start { animation: beacon 2.6s ease-in-out 520ms infinite; }
 @keyframes beacon {
     0%, 100% {
         box-shadow: 0 0 0.5em rgba(255, 200, 116, 0.22),

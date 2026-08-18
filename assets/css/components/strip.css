@@ -1,0 +1,280 @@
+/* ---------- CHE DO CUON NGANG ----------
+   Cung mot bo .room nhung noi lien thanh mot dai ngang: moi phong giu dung ti
+   le anh va cao tron man hinh, cuon/vuot sang ngang de di tu ky niem nay sang
+   ky niem khac. Che do trinh chieu (bam "Tiep") van la mac dinh.
+
+   Che do nay luon dung ban cat NGANG cua anh nen, ke ca tren dien thoai - vi
+   the khi vao tren may dung thi trang xin xoay ngang (xem js/components/strip.js). */
+/* `in-rooms` chi co khi dang o mot ky niem: khong co no thi dai ngang se phu
+   kin ca man cong va man sanh (loi nhan) o duoi. */
+.mode-strip.in-rooms .rooms {
+    position: fixed;
+    cursor: grab;
+    inset: 0;
+    display: flex;
+    overflow-x: auto;
+    overflow-y: hidden;
+    /* Khong snap: day la MOT dai lien, cuon toi dau dung do - snap se keo giat
+       nguoc lai moi khi lan chuot chua du mot phong. Dia chi van tu doi theo
+       phong nam giua man hinh. */
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;                 /* thanh cuon lam vo canh */
+    -webkit-overflow-scrolling: touch;
+}
+.mode-strip.in-rooms .rooms::-webkit-scrollbar { display: none; }
+
+/* Moi phong la mot o trong dai: rong = cao man hinh nhan ti le anh, nen hai
+   phong ke nhau khop mep va tuong noi lien thanh mot day.
+   Keo bang chuot tren may tinh, vuot bang tay tren dien thoai. */
+.mode-strip.in-rooms .room {
+    position: relative;
+    flex: 0 0 auto;
+    /* Moi phong phu TRON man hinh, dung nhu che do trinh chieu: dung yen thi
+       chi thay mot phong, mep noi chi lo ra trong luc dang keo. Anh nen van
+       object-fit: cover nen cat giong het che do kia.
+       Dung % cua khung cuon (khung la fixed inset:0) chu khong dung svh: svh tru
+       ca thanh dieu huong nen se ho mot dai toi o dinh man hinh. */
+    width: 100%;
+    height: 100%;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transition: none;
+    cursor: default;
+}
+/* ---------- MEP NOI GIUA HAI PHONG ----------
+   Hai lop xu ly:
+   1. Phong ke nhau lat guong nhau. Neu hai phong dung CUNG mot anh nen thi hai
+      mep cham nhau la cung mot dai pixel -> tuong chay lien mach. Hai buc tuong
+      deu doi xung nen lat guong khong lam sai o treo tranh; chi lat ANH NEN,
+      tranh va chu giu nguyen chieu.
+   2. Hai phong dung hai anh KHAC nhau thi lat guong khong cuu duoc, nen moi
+      phong tu phu mot dai toi mem o hai mep. Cho giap nhau thanh mot vet toi
+      doi xung - mat doc ra la goc tuong, khong phai vet cat. */
+.mode-strip.in-rooms .room:nth-child(even) .room__bg { scale: -1 1; }
+
+.mode-strip.in-rooms .room::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    /* Rat nhe thoi: hai phong cung anh thi mep da khop san nho lat guong, dat
+       vet toi day vao lai thanh mot soc den giua tuong. Lop nay chi de lam diu
+       cho giap giua HAI ANH KHAC NHAU. */
+    background: linear-gradient(90deg,
+        rgba(28, 20, 12, 0.16) 0,
+        rgba(28, 20, 12, 0) 1.6%,
+        rgba(28, 20, 12, 0) 98.4%,
+        rgba(28, 20, 12, 0.16) 100%);
+}
+
+/* Canh trong phong GIU NGUYEN cach dat cua che do trinh chieu: hop canh van
+   dung ti le anh (--room-w / --room-h) va neo day giua. KHONG duoc ep no bang
+   dung o phong: lam vay hop canh se mang ti le MAN HINH, anh bi object-fit cat
+   lai, va moi toa do % (tranh, ngay khac) lech khoi anh.
+   O day chi tat hieu ung, con kich thuoc de nguyen. */
+.mode-strip.in-rooms .room__scene {
+    scale: 1;
+    transition: none;
+}
+/* Trong dai thi khong con khai niem "chuong sau": di tiep bang cach cuon */
+.mode-strip.in-rooms .room__next { display: none; }
+/* Tranh hien san, khong cho hieu ung treo lan luot */
+.mode-strip.in-rooms .room__art,
+.mode-strip.in-rooms .room__date {
+    opacity: 1;
+    transform: none;
+    transition: none;
+}
+
+/* Lop xem tranh van phu kin man hinh chu khong nam trong o phong */
+.mode-strip.in-rooms .room__viewer { position: fixed; }
+
+/* Dang keo: khong cho boi den chu, va doi con tro cho biet dang cam */
+.mode-strip.in-rooms .rooms.is-dragging {
+    cursor: grabbing;
+    user-select: none;
+}
+.mode-strip.in-rooms .rooms.is-dragging * { pointer-events: none; }
+
+/* ---------- NUT DOI CHE DO ----------
+   Goc tren-PHAI, ngang hang voi nut dong thoi gian ben trai (cung padding nen
+   hai bien ten thang hang nhau). Cung mot bien ten cho dong bo.
+   `pointer-events: none` o lop chua: truoc day hop nay neo tu dinh man hinh nen
+   phu len ca nut dong thoi gian va nuot cu bam vao do. */
+.mode {
+    position: fixed;
+    top: 0;
+    right: 0;
+    z-index: 8;
+    padding: 2.2vmin;
+    pointer-events: none;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 500ms ease, visibility 0s 500ms;
+}
+.mode.is-shown { visibility: visible; opacity: 1; transition: opacity 500ms ease; }
+
+.mode__btn {
+    position: relative;
+    pointer-events: auto;
+    display: block;
+    width: clamp(7.5rem, 17vmin, 11.5rem);
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    filter: drop-shadow(0 0.4vmin 0.8vmin rgba(26, 16, 6, 0.55));
+    transition: transform 200ms ease;
+    -webkit-tap-highlight-color: transparent;
+}
+.mode__btn:hover { transform: translateY(-1px); }
+.mode__btn:active { transform: translateY(1px); }
+.mode__btn:focus-visible { outline: 2px solid #e8c98a; outline-offset: 0.4em; border-radius: 0.4em; }
+.mode__btn img { display: block; width: 100%; height: auto; }
+.mode__label {
+    position: absolute;
+    left: 18%;
+    right: 18%;
+    top: 30%;
+    bottom: 30%;
+    display: grid;
+    place-items: center;
+    font-family: 'EB Garamond', Georgia, 'Times New Roman', serif;
+    font-size-adjust: ex-height 0.44;
+    font-weight: 500;
+    font-size: clamp(0.44rem, 0.95vmin, 0.7rem);
+    letter-spacing: 0.08em;
+    text-indent: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--ink);
+    text-shadow: var(--ink-carve);
+}
+
+/* ---------- LOI NHAC XOAY MAY ----------
+   Trinh duyet chi cho khoa huong man hinh khi dang toan man hinh, va khong phai
+   may nao cung cho. Khong khoa duoc thi hien tam nhac nay. */
+.rotate-hint {
+    position: fixed;
+    inset: 0;
+    z-index: 12;
+    display: grid;
+    place-items: center;
+    gap: 1.2em;
+    padding: 8vmin;
+    text-align: center;
+    background: rgb(38, 31, 24);
+    color: #f4e7cd;
+    font-family: 'EB Garamond', Georgia, 'Times New Roman', serif;
+    font-size: clamp(0.95rem, 4.5vmin, 1.4rem);
+    letter-spacing: 0.16em;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 320ms ease, visibility 0s 320ms;
+}
+.needs-rotate .rotate-hint { opacity: 1; visibility: visible; transition: opacity 320ms ease; }
+.rotate-hint__icon {
+    font-size: 2.4em;
+    animation: rotateNudge 2.4s ease-in-out infinite;
+}
+@keyframes rotateNudge {
+    0%, 45%, 100% { transform: rotate(0deg); }
+    60%, 85%      { transform: rotate(90deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .mode, .mode.is-shown, .mode__btn { transition: none; }
+    .rotate-hint__icon { animation: none; }
+}
+
+/* ---------- BANG CHON CHE DO ----------
+   Nut mo ra bang nay thay vi doi che do ngay: hai che do di lai khac han nhau
+   nen phai noi ro cach dung truoc khi chon. */
+.mode__panel {
+    position: absolute;
+    top: calc(2.2vmin + clamp(7.5rem, 17vmin, 11.5rem) / 2.49 + 1vmin);
+    right: 2.2vmin;
+    width: min(22rem, 78vw);
+    padding: 0.9rem;
+    display: grid;
+    gap: 0.5rem;
+    border-radius: 0.5rem;
+    background: linear-gradient(160deg, #f3ead6, #e3d5b8);
+    box-shadow: 0 1.2vmin 3vmin rgba(22, 14, 6, 0.45),
+                inset 0 0 0 1px rgba(176, 134, 60, 0.55);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(-0.4rem);
+    transition: opacity 260ms ease, transform 300ms cubic-bezier(0.2, 0.8, 0.2, 1),
+                visibility 0s 260ms;
+}
+.mode.is-open .mode__panel {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: none;
+    transition: opacity 260ms ease, transform 300ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.mode__choice {
+    display: grid;
+    gap: 0.15rem;
+    margin: 0;
+    padding: 0.7rem 0.8rem;
+    border: 0;
+    border-radius: 0.35rem;
+    background: rgba(255, 252, 244, 0.5);
+    box-shadow: inset 0 0 0 1px rgba(176, 134, 60, 0.35);
+    text-align: left;
+    cursor: pointer;
+    font-family: 'EB Garamond', Georgia, 'Times New Roman', serif;
+    font-size-adjust: ex-height 0.44;
+    color: var(--ink);
+    transition: background 200ms ease, box-shadow 200ms ease;
+}
+.mode__choice:hover { background: rgba(255, 252, 244, 0.85); }
+.mode__choice:focus-visible { outline: 2px solid #c8a15a; outline-offset: 2px; }
+.mode__choice[aria-current="true"] {
+    background: rgba(255, 246, 224, 0.95);
+    box-shadow: inset 0 0 0 1.5px rgba(176, 134, 60, 0.85),
+                0 0 1.2em rgba(255, 206, 128, 0.35);
+}
+.mode__name {
+    font-size: clamp(0.85rem, 1.7vmin, 1.05rem);
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-shadow: var(--ink-carve);
+}
+.mode__desc {
+    font-size: clamp(0.72rem, 1.35vmin, 0.88rem);
+    line-height: 1.45;
+    color: rgba(72, 55, 35, 0.78);
+}
+.mode__desc b { font-weight: 600; letter-spacing: 0.06em; }
+
+/* Dong chan bang: chay lai tour huong dan. Khong lam thanh mot o nhu hai che
+   do ben tren - no khong phai mot lua chon ngang hang, chi la mot loi moi nho. */
+.mode__tour {
+    margin: 0.1rem 0 0;
+    padding: 0.3rem 0;
+    border: 0;
+    border-top: 1px solid rgba(176, 134, 60, 0.32);
+    background: none;
+    font-family: 'EB Garamond', Georgia, 'Times New Roman', serif;
+    font-size-adjust: ex-height 0.44;
+    font-size: clamp(0.72rem, 1.35vmin, 0.88rem);
+    letter-spacing: 0.1em;
+    color: rgba(72, 55, 35, 0.72);
+    cursor: pointer;
+    transition: color 200ms ease;
+}
+.mode__tour:hover { color: var(--ink); }
+.mode__tour:focus-visible { outline: 2px solid #c8a15a; outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+    .mode__panel, .mode.is-open .mode__panel { transition: none; transform: none; }
+}
