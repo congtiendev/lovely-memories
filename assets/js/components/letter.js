@@ -9,6 +9,7 @@ export class Letter {
     #writer;
     #sample;
     #warming = null;
+    #onStart = () => {};
     #timers = [];
     #run = 0;   // moi lan doi trang thai la mot luot; luot cu het hieu luc
 
@@ -18,7 +19,20 @@ export class Letter {
         this.#start = element.querySelector('.letter__start');
         this.#sample = paragraphs.join('');
         this.#writer = new Typewriter(element.querySelector('.letter__page'), paragraphs, {
-            onDone: () => this.#element.classList.add('is-read'),
+            onDone: () => {
+                this.#element.classList.remove('is-writing');
+                this.#element.classList.add('is-read');
+            },
+        });
+        /* Mot nut, hai viec - phai xet o day chu khong de main.js lo: dang go
+           chu thi nut la "Bo qua" (hien het chu ngay, khoi phai ngoi cho), go
+           xong moi la "Bat dau" de buoc vao phong dau tien. */
+        this.#start.addEventListener('click', () => {
+            if (this.isUnread) {
+                this.reveal();
+                return;
+            }
+            this.#onStart();
         });
     }
 
@@ -39,7 +53,7 @@ export class Letter {
     reveal() {
         this.#run++;
         this.#clearTimers();
-        this.#element.classList.remove('is-dropping');
+        this.#element.classList.remove('is-dropping', 'is-writing');
         this.#element.classList.add('is-down');
         this.#writer.finish();
     }
@@ -49,9 +63,9 @@ export class Letter {
         return !this.#element.classList.contains('is-read');
     }
 
-    /** Nut "Bat dau" khac trong o bau duc duoi day khung. */
+    /** Bam nut khi da doc xong: buoc vao phong ky niem dau tien. */
     onStart(handler) {
-        this.#start.addEventListener('click', handler);
+        this.#onStart = handler;
     }
 
     /** Nhac khung len khoi man hinh, tra lai ca gian sanh. */
@@ -76,14 +90,17 @@ export class Letter {
     reset() {
         this.#run++;
         this.#clearTimers();
-        this.#element.classList.remove('is-dropping', 'is-down', 'is-read',
-                                       'is-leaving', 'is-gone');
+        this.#element.classList.remove('is-dropping', 'is-down', 'is-writing',
+                                       'is-read', 'is-leaving', 'is-gone');
         this.#writer.reset();
     }
 
     #drop() {
         this.#element.classList.add('is-dropping');
-        this.#after(TIMING.typeStart, () => this.#writer.play());
+        this.#after(TIMING.typeStart, () => {
+            this.#element.classList.add('is-writing');   // hien nut "Bo qua"
+            this.#writer.play();
+        });
         // Het roi thi bo animation va lop GPU di, giu trang thai cuoi bang
         // transform tinh. Dung dong ho chu khong dung `animationend`: su kien
         // do khong bao gio den neu animation bi doi/cat giua duong.

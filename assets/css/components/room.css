@@ -105,15 +105,18 @@
     outline-offset: 0.6em;
 }
 
-.room__art--1 { --art-cx: var(--art1-cx); --art-cy: var(--art1-cy); --art-w: var(--art1-w); }
-.room__art--2 { --art-cx: var(--art2-cx); --art-cy: var(--art2-cy); --art-w: var(--art2-w); }
-.room__art--3 { --art-cx: var(--art3-cx); --art-cy: var(--art3-cy); --art-w: var(--art3-w); }
+/* Vi tri va be ngang cua tung buc do JS gan inline (--art-cx / --art-cy /
+   --art-w), tinh tu khoang tuong that cua tung nen - xem js/layout.js.
+   O day chi con phan chung; --art-ar la ti le that cua buc, dung cho luc
+   phong to va cho cong thuc du phong ben duoi. */
 
 /* Treo lan luot, sau khi canh phong da hien */
 .room.is-open .room__art { opacity: 1; transform: none; }
 .room.is-open .room__art--1 { transition-delay: 420ms; }
 .room.is-open .room__art--2 { transition-delay: 680ms; }
 .room.is-open .room__art--3 { transition-delay: 940ms; }
+.room.is-open .room__art--4 { transition-delay: 1200ms; }
+.room.is-open .room__art--5 { transition-delay: 1460ms; }
 
 /* ---------- NGAY KHAC DUOI BE TUONG ----------
    Khac chim vao panel da duoi hoc tuong, dung dung cong thuc voi chu tren

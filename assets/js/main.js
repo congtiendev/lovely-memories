@@ -1,6 +1,6 @@
 import { TIMING, calm } from './config.js';
 import { Router, BASE_ROUTES } from './router.js';
-import { MESSAGE, ART_LABELS } from './content.js';
+import { MESSAGE, ART_LABELS, TOUR } from './content.js';
 import { CHAPTERS } from './chapters.js';
 import { gapLabel, dateLabel } from './format.js';
 import { Doorway } from './components/doorway.js';
@@ -9,6 +9,9 @@ import { Letter } from './components/letter.js';
 import { Interlude } from './components/interlude.js';
 import { Timeline } from './components/timeline.js';
 import { buildGallery } from './components/gallery.js';
+import { Modes } from './components/strip.js';
+import { Music } from './components/music.js';
+import { Tour } from './components/tour.js';
 
 const doorway = new Doorway(document.querySelector('.doorway'));
 const letter = new Letter({
@@ -16,6 +19,11 @@ const letter = new Letter({
     paragraphs: MESSAGE,
 });
 const interlude = new Interlude(document.querySelector('.interlude'));
+/* Nhac nen: chi duoc phep chay sau mot cu bam that, nen cho den luc mo cua */
+const music = new Music({
+    audio: document.querySelector('.music'),
+    button: document.querySelector('.sound'),
+});
 
 /* Moi ky niem mot canh phong, dung tu thu muc memories/. Ten thu muc lam luon
    ten man hinh va dia chi, nen them ky niem khong phai sua gi o day. */
@@ -36,6 +44,28 @@ const timeline = new Timeline({
     chapters: folders,
     onPick: route => router.go(route),
 });
+/* Hai che do xem: trinh chieu (bam "Tiep") va cuon ngang (noi lien cac phong).
+   Cuon toi phong nao thi dia chi doi toi do, nen moi ky niem van mot dia chi. */
+const modes = new Modes({
+    element: document.querySelector('.mode'),
+    rooms: document.querySelector('.rooms'),
+    folders,
+    onScrollTo: folder => {
+        if (folder && folder !== current) {
+            current = folder;
+            router.go(folder, { silent: true });
+            timeline.mark(folder);
+        }
+    },
+    onChange: () => reshowCurrent(),
+    onTour: () => tour.start(),
+});
+
+/* Gian phong khong co menu, khong co chu huong dan nao san tren man hinh - lan
+   dau vao phong thi phai co ai do chi cho biet bam vao dau. Chi chay mot lan;
+   muon xem lai thi co dong cuoi trong bang chon che do. */
+const tour = new Tour({ element: document.querySelector('.tour'), steps: TOUR });
+
 const flight = new Flight({
     hall: document.querySelector('.stage--hall'),
     onArrive: () => {
@@ -43,6 +73,22 @@ const flight = new Flight({
         roomOf.get(folders[0])?.warmup();   // con ca doan doc loi nhan de anh kip ve
     },
 });
+
+/* Mo thang bang URL (F5 giua chung, hoac gui link mot ky niem) thi khong di qua
+   cu bam mo cua, ma trinh duyet lai chan moi tieng dong cho toi khi co tuong tac
+   that. Nen o cac man hinh do, cham dau tien vao trang la luc nhac vao. */
+let armed = false;
+function armMusic() {
+    if (armed) return;
+    armed = true;
+    const on = () => {
+        music.start();
+        document.removeEventListener('pointerdown', on);
+        document.removeEventListener('keydown', on);
+    };
+    document.addEventListener('pointerdown', on);
+    document.addEventListener('keydown', on);
+}
 
 let launch = null;
 let hop = 0;             // moi lan doi man hinh la mot luot; luot cu het hieu luc
@@ -55,18 +101,49 @@ let current = null;      // man hinh dang mo, de biet dang di tien hay lui
    Moi ham restore duoi day dat DU trang thai cua man hinh do, khong dua vao
    viec truoc do dang o dau - nhu vay nhay bang nut Back/Forward luon dung. */
 router.start(route => {
-    // Dong thoi gian la UI toan trang, chi an o man cong (doan mo dau khong nen
-    // lo truoc co bao nhieu chuong)
-    timeline.setShown(route !== 'gate');
-    timeline.mark(route);
+    markRoute(route);
+    if (route !== 'gate') armMusic();
 
     const from = current;
     current = route;
+
     if (route === 'hall') return restoreHall();
     if (route === 'explore') return restoreExplore();
     if (roomOf.has(route)) return restoreChapter(route, from);
     restoreGate();
 });
+
+/* Trang thai UI toan trang cua mot man hinh. Router goi ham nay, va nut
+   "Bat dau" cung phai goi: nut do doi dia chi im lang (de con giu hieu ung
+   nhac khung tranh) nen router khong chay, truoc day dan toi vao phong dau
+   tien ma khong co nut dong thoi gian lan nut che do xem. */
+function markRoute(route) {
+    // Dong thoi gian la UI toan trang, chi an o man cong (doan mo dau khong nen
+    // lo truoc co bao nhieu chuong)
+    timeline.setShown(route !== 'gate');
+    timeline.mark(route);
+    modes.setShown(route !== 'gate');
+    // Dai ngang chi duoc phep phu man hinh khi dang o trong cac phong
+    document.body.classList.toggle('in-rooms', roomOf.has(route));
+    if (roomOf.has(route)) modes.current = route;
+}
+
+/* Doi che do giua chung: dai ngang bat MOI phong hien san, con trinh chieu chi
+   hien phong dang mo - doi xong ma khong dat lai thi nguoi xem roi ve mot man
+   trong (trinh chieu) hoac ve dau dai (cuon ngang). */
+function reshowCurrent() {
+    if (!roomOf.has(current)) return;
+    interlude.clear();
+    leaveRooms(current);
+    roomOf.get(current).settle();
+    if (modes.isStrip) modes.scrollTo(current, { smooth: false });
+}
+
+/* Cho canh phong hien va tranh treo xong roi moi soi den: soi vao mot buc tranh
+   dang con mo dan thi nguoi xem khong biet dang duoc chi cai gi. */
+function offerTour() {
+    setTimeout(() => tour.offer(), 1900);
+}
 
 /** Dat san canh sanh, khong dien lai duong bay. */
 function enterHall() {
@@ -109,6 +186,13 @@ function restoreChapter(folder, from) {
     enterHall();     // sanh nam san phia sau, de luc quay ra khong phai tai lai
     letter.hide();
 
+    // Che do cuon ngang: ca dai luon hien, chi can dua dung phong ve giua man
+    if (modes.isStrip) {
+        interlude.clear();
+        modes.scrollTo(folder, { smooth: from != null });
+        return;
+    }
+
     const index = folders.indexOf(folder);
     const room = roomOf.get(folder);
     const was = from ? folders.indexOf(from) : -1;
@@ -118,6 +202,7 @@ function restoreChapter(folder, from) {
         interlude.clear();      // chuong dau: khong co gi truoc no de "sau"
         leaveRooms(folder);
         room.settle();
+        offerTour();
         return;
     }
 
@@ -133,6 +218,8 @@ function restoreChapter(folder, from) {
         room.settle();
         leaveRooms(folder);
         await room.warmup();
+    }).then(() => {
+        if (run === hop) offerTour();   // van con o phong nay thi moi chi duong
     });
 }
 
@@ -157,6 +244,7 @@ doorway.onClick(() => {
     }
 
     flight.arm();
+    music.start();     // cu bam nay la tuong tac dau tien: du de trinh duyet cho phat
     letter.warmup();   // con ~4s nua moi den luot khung tranh, du cho font ve
     launch = setTimeout(takeOff, calm.matches ? TIMING.calmDoors : TIMING.doors + TIMING.hold);
 });
@@ -172,10 +260,13 @@ function takeOff() {
 
 // Bam "Bat dau": khung tranh nhac len, dong thoi canh phong dau tien hien dan
 letter.onStart(() => {
-    router.go(folders[0], { silent: true });
-    current = folders[0];   // doi dia chi im lang thi phai tu cap nhat moc nay
+    const first = folders[0];
+    router.go(first, { silent: true });
+    current = first;    // doi dia chi im lang thi phai tu cap nhat moc nay
+    markRoute(first);   // ... va tu bat nut dong thoi gian / nut che do xem
     letter.dismiss();
-    roomOf.get(folders[0]).enter();
+    if (modes.isStrip) modes.scrollTo(first, { smooth: false });
+    roomOf.get(first).enter().then(offerTour);
 });
 
 gallery.forEach(({ room }, i) => {
@@ -189,13 +280,21 @@ gallery.forEach(({ room }, i) => {
         restoreChapter(next, from);
     });
 
-    // Bam vao phong: lui mot buoc. Dang xem tranh thi bam la dong tranh truoc.
-    room.onClick(() => {
+    /* Bam vao canh phong: di theo dung truc thoi gian, khong nhay lung tung.
+       Nua ben PHAI la toi ngay sau, nua ben TRAI la lui ve ngay truoc - giong
+       lat mot cuon album. Het hai dau thi dung lai: o ky niem dau tien bam ben
+       trai khong con gi de lui, o ky niem cuoi bam ben phai khong con gi de toi.
+       Dang xem tranh phong to thi cu bam dau tien la dong tranh lai. */
+    room.onClick(event => {
         if (room.isViewingArt) {
             room.closeArt();
             return;
         }
-        router.go(i === 0 ? 'explore' : folders[i - 1]);
+        if (modes.isStrip) return;   // dai ngang: di lai bang cach vuot
+        const forward = event.clientX >= innerWidth / 2;
+        const target = folders[forward ? i + 1 : i - 1];
+        if (!target) return;
+        router.go(target);
     });
 });
 

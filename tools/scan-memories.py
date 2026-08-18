@@ -10,10 +10,13 @@ Quy uoc ten file trong moi thu muc:
     memory-portrait-<w>w.webp  canh phong, ban cat doc
     art-NN-<w>w.webp           tranh treo tuong (ban rong nhat dung cho lop xem)
 
-Thu muc khong co anh canh thi dung lai canh cua mot ky niem khac, CHON THEO SO
-TRANH (xem SCENE_BY_ARTS): 2 tranh thi lay phong co hai o tuong hai ben hoc
-tuong, 1 tranh thi lay phong co mot o lon o giua. Nho vay tranh luon co dung cho
-treo ma khong phai ve them canh moi.
+Thu muc khong co anh canh thi muon canh, CHON THEO SO TRANH (xem
+SCENE_BY_ARTS). Gia tri co the la:
+    'DD-MM-YYYY'   muon canh cua mot ky niem khac (canh co hoc tuong, o tuong)
+    'bg:<ten>'     dung anh nen chung trong assets/images/background/
+                   (<ten>-<w>w.webp va <ten>-portrait-<w>w.webp)
+Nen chung deu la tuong PHANG nen treo bao nhieu buc cung duoc; canh co san hoc
+tuong / o tuong thi phai co bo toa do rieng cho tung so luong.
 
 Thu muc rong (khong tranh, khong canh) bi bo qua - de san cho nhung ngay chua co
 anh ma khong lam ban dong thoi gian.
@@ -29,12 +32,15 @@ MEM = ROOT / 'memories'
 OUT = ROOT / 'assets' / 'js' / 'chapters.js'
 
 # Phong dung cho thu muc khong co anh canh, chon theo so tranh trong thu muc do
-SCENE_BY_ARTS = {
-    3: '22-05-2026',   # ban ngang co ba o tuong
-    2: '17-03-2026',   # hai o tuong hai ben hoc tuong
-    1: '22-05-2026',   # mot o lon giua tuong
-}
-SCENE_FALLBACK = '22-05-2026'
+# Chon nen theo SO TRANH. Chi co hai nen: `room-statue` co hai o tuong hai ben
+# hoc tuong (vua dung cho hai buc), `room-panels` co ba o tuong nen nhan duoc
+# moi so luong khac. Cach treo trong tung nen do js/layout.js tu tinh.
+SCENE_BY_ARTS = {2: 'room-statue'}
+SCENE_FALLBACK = 'room-panels'
+BG_DIR = 'assets/images/background'
+# CHI nhan nen co tien to `room-`: trong cung thu muc con co gate-* va hall-*
+# la canh cong va canh sanh (noi tha khung loi ngo), khong phai phong trung bay.
+BG_FILE = re.compile(r'^(room-[a-z0-9-]+?)(-portrait)?-(\d+)w\.webp$')
 
 DATE = re.compile(r'^(\d{2})-(\d{2})-(\d{4})$')
 FILE = re.compile(r'^(memory-portrait|memory|art-\d+)-(\d+)w\.webp$')
@@ -79,6 +85,22 @@ def js_list(folder, items, sizes):
                w, h))
 
 
+def shared_scenes():
+    """Cac anh nen dung chung trong assets/images/background/."""
+    out = {}
+    d = ROOT / BG_DIR
+    for f in sorted(d.iterdir()) if d.is_dir() else []:
+        m = BG_FILE.match(f.name)
+        if not m:
+            continue
+        name, portrait, w = m.group(1), bool(m.group(2)), int(m.group(3))
+        sc = out.setdefault(name, {'folder': name, 'wide': [], 'tall': [], 'plain': True})
+        sc['tall' if portrait else 'wide'].append((w, f.name))
+    for sc in out.values():
+        sc['wide'].sort(); sc['tall'].sort()
+    return out
+
+
 def main():
     folders = sorted((p for p in MEM.iterdir() if p.is_dir() and DATE.match(p.name)),
                      key=lambda p: tuple(reversed(DATE.match(p.name).groups())))
@@ -87,6 +109,7 @@ def main():
     # Cac phong co anh canh that: nguon de cho vay
     scenes = {name: {'folder': name, 'wide': g.get('memory'), 'tall': g.get('memory-portrait')}
               for name, g in groups.items() if 'memory' in g or 'memory-portrait' in g}
+    shared = shared_scenes()
 
     chapters, skipped = [], []
     for folder in folders:
@@ -97,8 +120,8 @@ def main():
             if not arts:
                 skipped.append(folder.name)   # thu muc rong: chua den luot
                 continue
-            borrow = SCENE_BY_ARTS.get(len(arts), SCENE_FALLBACK)
-            scene = scenes.get(borrow)
+            name = SCENE_BY_ARTS.get(len(arts), SCENE_FALLBACK)
+            scene = shared.get(name)
         chapters.append({'folder': folder.name, 'scene': scene, 'arts': arts})
 
     lines = ["/* FILE NAY DUOC SINH RA TU thu muc memories/ - dung sua tay.",
@@ -115,11 +138,14 @@ def main():
                 items = sc[key]
                 if not items:
                     continue
-                w, h = size(MEM / sc['folder'] / items[-1][1])
-                srcs = ', '.join(f"'memories/{sc['folder']}/{n} {wd}w'" for wd, n in items)
+                base = BG_DIR if sc.get('plain') else f"memories/{sc['folder']}"
+                w, h = size(ROOT / base / items[-1][1])
+                srcs = ', '.join(f"'{base}/{n} {wd}w'" for wd, n in items)
                 pick = items[len(items) // 2][1]
-                lines.append(f"            {key}: {{ src: 'memories/{sc['folder']}/{pick}',")
+                lines.append(f"            {key}: {{ src: '{base}/{pick}',")
                 lines.append(f"                    srcset: [{srcs}], width: {w}, height: {h} }},")
+            if sc.get('plain'):
+                lines.append(f"            plain: true,")
             lines.append(f"        }},")
         lines.append(f"        arts: [")
         for name, items in ch['arts']:
@@ -138,7 +164,7 @@ def main():
     print(f'-> {OUT.relative_to(ROOT)}')
     for ch in chapters:
         sc = ch['scene']
-        note = '' if sc and sc['folder'] == ch['folder'] else f" (vay phong {sc['folder']})" if sc else ' (CHUA CO PHONG)'
+        note = f" -> {sc['folder']}" if sc else ' (CHUA CO PHONG)'
         print(f"   {ch['folder']}: {len(ch['arts'])} tranh{note}")
     if skipped:
         print(f'   bo qua {len(skipped)} thu muc rong: {", ".join(skipped)}')

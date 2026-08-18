@@ -1,0 +1,65 @@
+/* ---------- NUT NHAC NEN ----------
+   Goc duoi phai, nho va mo: no la mot cai cong tac, khong phai mot phan cua
+   gian phong. Chi hien sau khi nhac da bat (JS bo thuoc tinh `hidden`).
+   Dat o goc duoi de khong dung hai nut vien vang o hai goc tren, va van nam
+   ngoai duong di cua chu "TIEP" (giua, day phong). */
+.sound {
+    position: fixed;
+    right: 2.2vmin;
+    bottom: 2.2vmin;
+    z-index: 60;
+    width: 5.4vmin;
+    height: 5.4vmin;
+    min-width: 34px;
+    min-height: 34px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 1px solid rgba(232, 201, 138, 0.34);
+    border-radius: 999px;
+    background: rgba(28, 20, 11, 0.42);
+    -webkit-backdrop-filter: blur(3px);
+    backdrop-filter: blur(3px);
+    color: rgba(248, 232, 199, 0.82);
+    cursor: pointer;
+    opacity: 0.55;
+    transition: opacity 260ms ease, border-color 260ms ease, background 260ms ease;
+    -webkit-tap-highlight-color: transparent;
+}
+.sound:hover,
+.sound:focus-visible {
+    opacity: 1;
+    border-color: rgba(240, 214, 158, 0.7);
+    background: rgba(38, 27, 15, 0.6);
+}
+.sound:focus-visible { outline: 2px solid #e8c98a; outline-offset: 0.25em; }
+
+.sound svg {
+    width: 62%;
+    height: 62%;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.sound__horn { fill: currentColor; stroke-width: 1.2; }
+
+/* Tat tieng: hai vong song doi thanh dau gach cheo */
+.sound__cross { opacity: 0; }
+.sound.is-off .sound__wave { opacity: 0; }
+.sound.is-off .sound__cross { opacity: 1; }
+.sound.is-off { color: rgba(228, 210, 180, 0.55); }
+
+/* Song ngoai tho nhe theo nhip nhac cho biet la dang phat */
+.sound:not(.is-off) .sound__wave--far {
+    animation: soundPulse 2.8s ease-in-out infinite;
+}
+@keyframes soundPulse {
+    0%, 100% { opacity: 0.45; }
+    50%      { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sound:not(.is-off) .sound__wave--far { animation: none; opacity: 1; }
+}
