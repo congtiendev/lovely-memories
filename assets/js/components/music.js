@@ -6,16 +6,28 @@
 const FADE = 2600;        // vao nhe dan cho khop nhip cua dang mo
 const LEVEL = 1;          // het co - ban nhac da duoc chuan hoa sat tran khi cat
 
+/* Safari iOS khong cho dat `volume` cua <audio> (luon doc ra 1, ghi bi bo qua),
+   nen khong the fade bang volume. Do thu mot lan thay vi do user-agent. */
+function volumeIsSettable(audio) {
+    const before = audio.volume;
+    audio.volume = 0.5;
+    const ok = audio.volume === 0.5;
+    audio.volume = before;
+    return ok;
+}
+
 export class Music {
     #audio;
     #button;
     #fade = null;
+    #canFade = true;      // false tren iOS: vao thang, khong fade
     #wanted = false;      // nguoi doc co muon nghe khong (nut bat/tat)
 
     constructor({ audio, button }) {
         this.#audio = audio;
         this.#button = button;
         this.#audio.loop = true;
+        this.#canFade = volumeIsSettable(this.#audio);
         this.#audio.volume = 0;
 
         this.#button.addEventListener('click', () => this.toggle());
@@ -55,6 +67,7 @@ export class Music {
        tinh CSS nen khong co transition nao chay duoc cho no. */
     #fadeTo(target) {
         clearInterval(this.#fade);
+        if (!this.#canFade) return;   // iOS: am luong co dinh, nhac vao het co ngay
         const step = (target - this.#audio.volume) / (FADE / 50);
         this.#fade = setInterval(() => {
             const v = this.#audio.volume + step;

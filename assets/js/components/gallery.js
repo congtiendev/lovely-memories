@@ -44,6 +44,7 @@ export function buildGallery({ container, chapters, labels = {} }) {
             const spots = arrange({
                 wall, crop, arts: order,
                 roomRatio: scene.width / scene.height,
+                aspect: innerWidth / innerHeight,
             });
             if (!spots) continue;
             element.querySelectorAll('.room__art').forEach((art, i) => {
@@ -57,6 +58,14 @@ export function buildGallery({ container, chapters, labels = {} }) {
     };
     place();
     wideCrop.addEventListener('change', place);
+    // Phan canh nhin thay doi theo ti le man hinh (xoay may, doi cua so), nen
+    // tinh lai khi ti le doi that su - thanh dia chi tren dien thoai co/gian
+    // cung ban `resize` nhung khong doi ti le dang ke, bo qua de tranh giat.
+    let lastAspect = (innerWidth / innerHeight).toFixed(2);
+    addEventListener('resize', () => {
+        const a = (innerWidth / innerHeight).toFixed(2);
+        if (a !== lastAspect) { lastAspect = a; place(); }
+    });
     return built;
 }
 

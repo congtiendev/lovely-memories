@@ -117,6 +117,8 @@
 .room.is-open .room__art--3 { transition-delay: 940ms; }
 .room.is-open .room__art--4 { transition-delay: 1200ms; }
 .room.is-open .room__art--5 { transition-delay: 1460ms; }
+.room.is-open .room__art--6 { transition-delay: 1720ms; }
+.room.is-open .room__art--7 { transition-delay: 1980ms; }
 
 /* ---------- NGAY KHAC DUOI BE TUONG ----------
    Khac chim vao panel da duoi hoc tuong, dung dung cong thuc voi chu tren
