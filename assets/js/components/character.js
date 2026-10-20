@@ -90,6 +90,7 @@ export class Character {
     #cam = null;        // vi tri cuon dang ve (so thuc) khi nen dang cuon theo nhan vat
     #index = 0;         // chi so phong dang xem (cho dai ngang: dat nhan vat vao dung phong)
     #frames = {};       // { down: [img x4], ..., talk: [img x6] }
+    #loaded = null;     // Promise: moi khung hinh da tai xong (xem ready())
     #shown = null;
     #enabled;
     #scene = null;
@@ -324,8 +325,16 @@ export class Character {
     /* Tai 23 frame mot lan, luc dau tien vao canh. Moi frame la mot <img>
        chong len nhau, chi bat cai dang hien: doi frame bang cach doi src thi
        chop mot nhip luc trinh duyet giai ma lai anh. */
+    /** Moi khung hinh cua nhan vat da tai xong - doi cai nay roi moi cho no noi, khong thi
+        bong bong thoai hien ra ma chua thay nhan vat dau (mang cham). Goi som cung duoc. */
+    ready() {
+        this.#load();
+        return this.#loaded;
+    }
+
     #load() {
         if (this.#frames.down) return;
+        const waiting = [];
         const make = (name, n) => Array.from({ length: n }, (_, i) => {
             const img = new Image();
             img.src = `${DIR}${name}-${i}.webp`;
@@ -342,10 +351,13 @@ export class Character {
             img.decoding = 'async';
             img.fetchPriority = 'low';   // dung tranh anh nen cong dang can ve truoc
             img.draggable = false;
+            // Loi thi tai lai o tren, nen chi `load` moi tinh la xong
+            waiting.push(new Promise(resolve => img.addEventListener('load', resolve, { once: true })));
             this.#root.append(img);
             return img;
         });
         for (const [name, n] of Object.entries(FRAMES)) this.#frames[name] = make(name, n);
+        this.#loaded = Promise.all(waiting);
     }
 
     #key(event, down) {

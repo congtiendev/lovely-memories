@@ -11,6 +11,13 @@ import { arrange, WALLS } from '../layout.js';
    sanh, hoac trong luc tam bien chuyen chuong dang che), va no chi can den sau
    khi doc xong loi nhan. Rieng anh cong/sanh thi VAN de tinh trong HTML vi do
    la thu nguoi xem thay dau tien. */
+/* ANH CHUA GAN DIA CHI: moi anh cua phong de o data-src / data-srcset, Room#hydrate() moi gan
+   that khi phong sap can (phong dang xem va hai phong ke ben - warmup(); dai ngang them
+   nhung phong sap cuon toi - xem observeStrip duoi day). Cac phong chi bi an bang
+   `visibility`, nen gan san thi vao trang la trinh duyet tai anh cua CA 45 phong cung luc
+   (gan tram MB), tranh bang thong voi canh cong va nhan vat - mang cham la nhan vat hien
+   ra sau ca cau chao. */
+
 /* Ban cat ngang hay doc - dung nguong voi <source media> trong markup */
 const wideCrop = matchMedia('(min-aspect-ratio: 1/1)');
 
@@ -66,6 +73,7 @@ export function buildGallery({ container, chapters, labels = {} }) {
     };
     place();
     wideCrop.addEventListener('change', place);
+    observeStrip(container, built);
     // Phan canh nhin thay doi theo ti le man hinh (xoay may, doi cua so), nen
     // tinh lai khi ti le doi that su - thanh dia chi tren dien thoai co/gian
     // cung ban `resize` nhung khong doi ti le dang ke, bo qua de tranh giat.
@@ -75,6 +83,21 @@ export function buildGallery({ container, chapters, labels = {} }) {
         if (a !== lastAspect) { lastAspect = a; place(); }
     });
     return built;
+}
+
+/* Dai ngang: cac phong noi lien nhau, keo / lan chuot luot qua nhieu phong mot luc, nen gan
+   anh cho phong nao vao trong mot be ngang man hinh quanh khung nhin. Che do trinh chieu thi
+   moi phong deu phu kin man hinh (luc nao cung "giao" khung nhin) - o do bo qua, da co
+   warmup() cho phong dang xem va hai phong ke ben lo. */
+function observeStrip(container, built) {
+    if (!('IntersectionObserver' in window)) return;
+    const roomOf = new Map(built.map(({ element, room }) => [element, room]));
+    const io = new IntersectionObserver(entries => {
+        if (!document.documentElement.classList.contains('mode-strip')
+            && !document.body.classList.contains('mode-strip')) return;
+        for (const entry of entries) if (entry.isIntersecting) roomOf.get(entry.target)?.warmup();
+    }, { root: container, rootMargin: '0px 100% 0px 100%' });
+    for (const { element } of built) io.observe(element);
 }
 
 /* --art-ar la ti le that cua buc tranh, de CSS treo theo CHIEU CAO thay vi be
@@ -99,7 +122,7 @@ function markup(chapter, order, labels, next, hasPrev) {
         if (art.sheet) return `
             <button class="room__art room__art--${i + 1} room__invite" type="button"
                     style="--art-ar: ${(art.width / art.height).toFixed(4)}" aria-label="Mở thư mời">
-                <img src="${art.src}" width="${art.width}" height="${art.height}"
+                <img data-src="${art.src}" width="${art.width}" height="${art.height}"
                      fetchpriority="low" decoding="async" alt="">
                 <span class="room__invite-label">Thư mời</span>
             </button>`;
@@ -108,7 +131,7 @@ function markup(chapter, order, labels, next, hasPrev) {
             <button class="room__art room__art--${i + 1}" type="button"
                     style="--art-ar: ${(art.width / art.height).toFixed(4)}"
                     data-full="${art.full}" aria-label="${label}">
-                <img src="${art.src}" srcset="${art.srcset.join(', ')}"
+                <img data-src="${art.src}" data-srcset="${art.srcset.join(', ')}"
                      sizes="(min-aspect-ratio: 1/1) 20vw, 40vw"
                      width="${art.width}" height="${art.height}"
                      fetchpriority="low" decoding="async" alt="">
@@ -139,7 +162,7 @@ function bleed(scene, nextScene) {
     if (!scene || !wide || nextScene.folder === scene.folder) return '';
     return `
             <div class="room__bleed" aria-hidden="true">
-                <img src="${wide.src}" srcset="${wide.srcset.join(', ')}" sizes="100vw"
+                <img data-src="${wide.src}" data-srcset="${wide.srcset.join(', ')}" sizes="100vw"
                      width="${wide.width}" height="${wide.height}"
                      loading="lazy" decoding="async" alt="">
             </div>`;
@@ -153,9 +176,9 @@ function picture({ wide, tall }) {
     return `
             <picture>
                 ${wide && tall ? `<source media="(min-aspect-ratio: 1/1)"
-                        srcset="${wide.srcset.join(', ')}" sizes="100vw"
+                        data-srcset="${wide.srcset.join(', ')}" sizes="100vw"
                         width="${wide.width}" height="${wide.height}">` : ''}
-                <img class="room__bg" src="${main.src}" srcset="${main.srcset.join(', ')}"
+                <img class="room__bg" data-src="${main.src}" data-srcset="${main.srcset.join(', ')}"
                      sizes="100vw" width="${main.width}" height="${main.height}"
                      fetchpriority="low" decoding="async" alt="">
             </picture>`;

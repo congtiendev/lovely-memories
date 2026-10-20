@@ -1,5 +1,14 @@
 import { TIMING } from '../config.js';
 
+/** Anh da tai xong (hoac hong - hong thi thoi cho, khong ket). `complete` dung ca khi anh
+    da hong tu truoc: luc do su kien `error` da qua roi, cho no la cho mai. */
+export const loaded = img => img.complete
+    ? Promise.resolve()
+    : new Promise(resolve => {
+        img.addEventListener('load', resolve, { once: true });
+        img.addEventListener('error', resolve, { once: true });
+    });
+
 /* Mot canh phong ky niem. Trang thai nam tren chinh the .room (khong phai
    <body>) de nhieu phong cung ton tai trong trang ma khong de len nhau.
    Phong co the khong co tranh, khong co nut di tiep - moi thu deu la tuy chon. */
@@ -12,6 +21,7 @@ export class Room {
     #prev;
     #invite;
     #decoding = null;
+    #hydrated = false;
 
     constructor({ element }) {
         this.#element = element;
@@ -46,9 +56,34 @@ export class Room {
     /** Giai ma san. Goi som (ngay khi vao sanh): anh phong nang, ma no chi
         duoc dung den sau khi doc xong loi nhan. */
     warmup() {
+        this.#hydrate();
         return (this.#decoding ||= this.#img.decode
             ? this.#img.decode().catch(() => {})
             : Promise.resolve());
+    }
+
+    /* Gan dia chi that cho moi anh cua phong (gallery.js de san o data-src / data-srcset de
+       vao trang khong phai tai anh cua ca 45 phong). Goi lai nhieu lan khong sao. */
+    #hydrate() {
+        if (this.#hydrated) return;
+        this.#hydrated = true;
+        for (const el of this.#element.querySelectorAll('[data-srcset]')) {
+            el.srcset = el.dataset.srcset;
+            delete el.dataset.srcset;
+        }
+        for (const el of this.#element.querySelectorAll('img[data-src]')) {
+            el.src = el.dataset.src;
+            delete el.dataset.src;
+        }
+    }
+
+    /** Anh nen va moi buc tranh cua phong da tai xong (khong tinh anh `lazy` chi dung o dai
+        ngang). Doi cai nay truoc khi thuyet minh: noi ve buc tranh chua hien thi vo duyen. */
+    ready() {
+        this.#hydrate();
+        const imgs = [...this.#element.querySelectorAll('.room__scene img')]
+            .filter(img => img.loading !== 'lazy');
+        return Promise.all([this.warmup(), ...imgs.map(loaded)]);
     }
 
     /** Mo man vao phong, cho anh giai ma nhung toi da decodeBudget. */
