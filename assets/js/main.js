@@ -313,6 +313,24 @@ router.start(route => {
     restoreGate();
 });
 
+/* ---------- MAN CHO LUC MO TRANG ----------
+   Mang cham thi anh hien dan tung mang, cua chua co, nhan vat chua ve - nhin nhu trang hong.
+   Nen che bang man cho (.boot trong index.html) toi khi man dau tien da tai du nhung gi no can
+   (readyToSpeak: canh, nhan vat, font, loi doc; sanh thi anh sanh), toi da LOAD_BUDGET. */
+(async () => {
+    const boot = document.querySelector('.boot');
+    if (!boot) return;
+    const route = current;
+    if (route === 'gate' || roomOf.has(route)) {
+        await readyToSpeak(route);
+    } else {
+        const hall = [...document.querySelectorAll('.stage--hall img')].map(loaded);
+        await Promise.race([Promise.all([...hall, document.fonts?.ready]), wait(LOAD_BUDGET)]);
+    }
+    boot.classList.add('is-done');
+    setTimeout(() => boot.remove(), 900);   // khop transition .8s cua .boot
+})();
+
 /* Trang thai UI toan trang cua mot man hinh. Router goi ham nay, va nut
    "Bat dau" cung phai goi: nut do doi dia chi im lang (de con giu hieu ung
    nhac khung tranh) nen router khong chay, truoc day dan toi vao phong dau

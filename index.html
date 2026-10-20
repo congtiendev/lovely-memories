@@ -55,8 +55,47 @@
     <link rel="stylesheet" href="assets/css/components/listen.css">
 
     <script type="module" src="assets/js/main.js"></script>
+
+    <!-- Man cho luc mo trang: viet thang vao day (khong nam trong file CSS rieng) de no hien
+         ngay tu khung hinh dau, truoc ca khi cac file CSS khac ve. main.js go no di khi canh
+         dau tien da tai du (anh, nhan vat, font, loi doc). Mang hong hay JS loi thi sau 20s
+         tu mo ra, khong de nguoi xem nhin man nau mai. -->
+    <style>
+        .boot {
+            position: fixed;
+            inset: 0;
+            z-index: 200;
+            display: grid;
+            place-content: center;
+            justify-items: center;
+            gap: 1.1rem;
+            background: radial-gradient(ellipse at center, #3a2a19, #1a120a);
+            color: #e8d9a8;
+            font: 500 1.15rem/1.4 'EB Garamond', Georgia, 'Times New Roman', serif;
+            letter-spacing: 0.06em;
+            transition: opacity 0.8s ease, visibility 0s 0.8s;
+            animation: boot-bail 0.8s ease 20s forwards;
+        }
+        .boot.is-done { opacity: 0; visibility: hidden; }
+        .boot__ring {
+            width: 2.9rem;
+            height: 2.9rem;
+            border: 2px solid rgba(232, 201, 138, 0.22);
+            border-top-color: #e8c98a;
+            border-radius: 50%;
+            animation: boot-spin 1s linear infinite;
+        }
+        .boot__text { margin: 0; font-style: italic; }
+        @keyframes boot-spin { to { transform: rotate(360deg); } }
+        @keyframes boot-bail { to { opacity: 0; visibility: hidden; } }
+        @media (prefers-reduced-motion: reduce) { .boot__ring { animation-duration: 3s; } }
+    </style>
 </head>
 <body>
+    <div class="boot" role="status" aria-live="polite">
+        <div class="boot__ring" aria-hidden="true"></div>
+        <p class="boot__text">Đang mở cửa bảo tàng…</p>
+    </div>
     <!-- ---------- CONG: anh nen + o cua bam duoc ---------- -->
     <div class="stage stage--gate">
         <img class="bg"
