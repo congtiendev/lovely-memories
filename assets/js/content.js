@@ -1,6 +1,6 @@
 /* Loi nhan duoc go ra trong khung. Moi phan tu la mot doan. */
 export const MESSAGE = [
-    'Anh tạo trang web này như một nơi nhỏ để lưu lại những điều đó, để sau này mình có thể nhìn lại những câu chuyện, những khoảnh khắc mình từng đi qua.',
+    'Anh tạo trang web này như một nơi nhỏ để lưu lại kỉ niệm, để sau này mình có thể nhìn lại những câu chuyện, những khoảnh khắc mình từng đi qua.',
     'Thi thoảng lúc rảnh, em mở ra xem lại nhaaa ^^',
 ];
 
@@ -88,7 +88,10 @@ export const TOUR = [
 ];
 
 /* Cau nhan vat noi khi vua vao man cong, trong bong bong thoai. */
-export const GREETING = 'Xin chào em iuuuu, em là em anh Kong, hôm nay em sẽ dẫn chị đi tham quan bảo tàng Keep Memories, nơi lưu giữ những kỷ niệm của Kong Tien & Sunbee';
+export const GREETING = 'Xin chào em iuuuu, anh là Kong, hôm nay anh sẽ dẫn em đi tham quan bảo tàng Keep Memories, nơi lưu giữ những kỷ niệm của Kong Tien & Sunbee';
+
+/* Loi long tieng cua cau chao tren (doc dung cau do), phat cung luc chu chay trong bong bong. */
+export const GREETING_AUDIO = 'assets/audios/greeting.mp3';
 
 /* Sau cau chao, nhan vat hoi cau nay kem nut: bam thi di mo cua va vao sanh. */
 export const LETS_GO = { text: 'Chúng ta bắt đầu nhé?', button: 'OK' };
@@ -278,4 +281,199 @@ export const NARRATION = {
             'Lần đầu tiên đi mua cây tặng ẻm, khởi đầu với một cây hoa 10 giờ dễ trồng dễ chăm, ai rồi cũng bắt đầu từ đâu đó nhỉ',
         ],
     },
+    '06-09-2026': {
+        audio: 'memories/06-09-2026/thuyet-minh.mp3',
+        starts: [0.04, 8.36],
+        lines: [
+            'Sống 5 năm ở đất Hà Nội đây là lần đầu tiên anh biết mùi xôi cốm với thu Hà Nội là gì, mà lại còn đi cùng người mình thương, đã quá hú hú.',
+            'Hôm ấy em iu thích hoa sen, anh lục tìm khắp cả thread mà không chổ nào sẵn, nên đành chọn cẩm tú cầu, trộm vía là em nhà có vẻ rất thích hihi.',
+        ],
+    },
+    '09-09-2026': {
+        audio: 'memories/09-09-2026/thuyet-minh.mp3',
+        starts: [0.04],
+        lines: [
+            'Lần đầu qua aeon Long Biên chơi, hôm đó chúng mình cũng tông xoẹt tông phết ấy chứ, em xanh anh hồng cùng bó hoa len hồng anh cho em gái anh đan :>',
+        ],
+    },
+    '10-09-2026': {
+        audio: 'memories/10-09-2026/thuyet-minh.mp3',
+        starts: [0.04],
+        lines: [
+            'Một buổi ngẫu hứng không hẹn trước, khi anh chở em về nhà và rủ ăn xong đi chill, ẻm gật đầu luôn và 8h hai đứa chở nhau lên hồ đi dạo',
+        ],
+    },
+    '13-09-2026': {
+        audio: 'memories/13-09-2026/thuyet-minh.mp3',
+        starts: [0.04, 10.04],
+        lines: [
+            'Chưa bao giờ anh thấy ghét trời mưa như hôm này, chúng mình đã lên kế hoạch đi chơi Tree Bee làng hoa, ẻm cũng chuẩn sẵn 2 bộ để có ảnh đẹp mang về nhưng đùng cái trời đổ mưa.',
+            'Nhưng không saoo, anh Kong của em đã dự tính trước được vấn đề này và vẫn có ảnh xinh cho ẻm cầm về, không chỉ một mà là 2 bộ luôn.',
+        ],
+    },
+    '18-09-2026': {
+        audio: 'memories/18-09-2026/thuyet-minh.mp3',
+        starts: [0.04],
+        lines: [
+            'Cũng là một buổi ngẫu hứng đi làm về anh bảo em rằng tối nay dẫn iu đi tô tượng, và thế là ăn xong 2 đứa chở nhau mây lang thang hồ tây, chọn ngẫu nhiên 1 quán dọc đường, dù tượng không đẹp như kì vọng nhưng chúng mình vẫn có kỉ niệm mang về em nhỉ',
+        ],
+    },
+    '20-09-2026': {
+        audio: 'memories/20-09-2026/thuyet-minh.mp3',
+        starts: [0.04, 5.86],
+        lines: [
+            'Hôm này anh đi xem phim với bạn làm đổi kế hoạch ban đầu và ẻm giận anh, huhu anh bị ép mà.',
+            'Nhưng ẻm vẫn đồng ý gặp anh, và bằng mọi thứ cuối cùng ẻm cũng dịu trở lại và mỉm cười với anh, anh yêu em.',
+        ],
+    },
+    '23-09-2026': {
+        audio: 'memories/23-09-2026/thuyet-minh.mp3',
+        starts: [0.04, 8.94],
+        lines: [
+            'Thực hiện lời hứa với ẻm anh dẫn ẻm lên hàn mã chụp ảnh sớm cho đỡ đông, nhưng ôi vẫn chém không hết người. Bon chen may sao vẫn có ảnh cho em iu cầm về.',
+            'Tối đó cũng là lần đầu tiên dụ được ẻm đi ăn đêm, ẻm sợ mập nên từ chối miết.',
+        ],
+    },
+    '25-09-2026': {
+        audio: 'memories/25-09-2026/thuyet-minh.mp3',
+        starts: [0.04, 10.46],
+        lines: [
+            'Mùa trung thu đầu tiên cùng nhao, anh đã chọn quán nhật bổn nhưng có vẻ không giống quảng cáo cho lắm, ẻm cũng có vẻ hơi hụt hẫng vì tiệm này. Nhưng may sao có bộ phim hay vớt lại.',
+            'Xem phim xong chúng mình có đi chơi hội chợ cùng nhau, ở đó anh gặp bạn của ẻm, hehe ẻm giới thiêu tôi là người yêu của ẻm mặc dù 2 đứa vẫn chưa chính thức. Oách xà lách quá điiii',
+        ],
+    },
+    '27-09-2026': {
+        audio: 'memories/27-09-2026/thuyet-minh.mp3',
+        starts: [0.04, 7.01],
+        lines: [
+            'Em có để ý rằng tần suất đi date tháng 9 của tụi mình tăng gần như gấp đôi không, từ ngày gần nhau thấy 2 đứa bám nhau hẳn,',
+            'hôm này cũng là 1 bủi ngẫu hứng 2 đứa rủ nhau đi cafe chụp ảnh, xong thì cả 2 đều chưa muốn rời nên lượn lờ hồ tây ăn bò bía',
+        ],
+    },
+    '30-09-2026': {
+        audio: 'memories/30-09-2026/thuyet-minh.mp3',
+        starts: [0.04],
+        lines: [
+            'Tổng kết tháng 9 bằng 1 bộ phim mà anh chả nhớ là phim gì nữa, chỉ nhớ rằng hôm đó 2 ông phía sau ăn cơm chóa khá nhìu thuiii',
+        ],
+    },
+    '01-10-2026': {
+        audio: 'memories/01-10-2026/thuyet-minh.mp3',
+        starts: [0.04],
+        lines: [
+            'Lần đầu đi coi concert cùng nhau, hôm ấy có một sự cố là vé mở free nhưng vì mạng lag nên anh bị nhớ cuộc gọi của iu, bù lại chúng ta có kỉ niệm cầm zề',
+        ],
+    },
+    '04-10-2026': {
+        audio: 'memories/04-10-2026/thuyet-minh.mp3',
+        starts: [0.04],
+        lines: [
+            'Hẹn hò ngày cúi tuần, hôm đấy hơi bất ổn vì có 2 sự cố, đầu tiên là ăn ramen có muỗi tắm trong bát và 2 là em yêu hạ cánh nơi anh, vừa thương vừa xót mà em thì cứ cười thôi !!!!',
+        ],
+    },
+    '06-10-2026': {
+        audio: 'memories/06-10-2026/thuyet-minh.mp3',
+        starts: [0.04, 9.78, 15.92],
+        lines: [
+            'Hôm này ẻm có việc gấp ở quê mệt nên không on facebook rep tin nhắn anh, anh thì gặp em ở thang máy cầm điện thoại mà không rep nên nghĩ cũng buồn tưởng giận mình điều gì.',
+            'Tối đó tan làm định rủ ẻm đi mua cây mà ẻm bận, nên anh một mình phi sang Long Biên kiếm hoa cẩm tú cầu.',
+            'Đến nhà thấy điện sáng mà gọi không được, sợ ẻm đang tiếp khách nên anh đặt chậu cây trước nhà, lấy yên xe soi flash viết thiệp rùi về.',
+        ],
+    },
+    '07-10-2026': {
+        audio: 'memories/07-10-2026/thuyet-minh.mp3',
+        starts: [0.04],
+        lines: [
+            'Ẻm cầm máy xóa ảnh mất tiêu nên anh chả nhớ hôm này 2 đứa đi đâu mà lại checkin hồ',
+        ],
+    },
+    '09-10-2026': {
+        audio: 'memories/09-10-2026/thuyet-minh.mp3',
+        starts: [0.04, 4.53],
+        lines: [
+            'Em có nhớ hôm này là ngày gì không, em không ạ, hôm này là ngày bình thường thôi,',
+            'nhưng hoa ngày lễ thì gọi là quà, còn hoa ngày thường thì gọi là yêu, anh yêu em',
+        ],
+    },
+    '10-10-2026': {
+        audio: 'memories/10-10-2026/thuyet-minh.mp3',
+        starts: [0.04, 7.06],
+        lines: [
+            'Lần thứ hai được ngắm pháo hoa cùng nhauuu, tuy hơi bọn chen so với lần trươc nhưng bù lại khoảnh khắc nhận lại thực sự mỹ mãn,',
+            'anh cũng có cảm giác được ôm em che chở trước hàng bao con người xô lấn.',
+        ],
+    },
+    '11-10-2026': {
+        audio: 'memories/11-10-2026/thuyet-minh.mp3',
+        starts: [0.04, 7.46, 13.1],
+        lines: [
+            'Anh chở ẻm đi chụp ảnh sinh nhật cùng chị Vân, ẻm bảo anh về đi em bắt xe về sau, nhưng còn lâu nhé, anh bắt em đi chơi luôn.',
+            'Cuối ngày đón ẻm thấy ẻm rơm rớm nước mắt kể về nỗi ấm ức, anh thương lắm nên cũng chỉ an ủi.',
+            'Và rui anh đã chữa lành cho ẻm bằng cách dẫn đi ăn, đi xen phim, nhưng nay ẻm sộp lắm ẻm bao cả anh luôn, iu cục zàng lắm luôn',
+        ],
+    },
+    '13-10-2026': {
+        audio: 'memories/13-10-2026/thuyet-minh.mp3',
+        starts: [0.04, 5.37],
+        lines: [
+            'Nay nhìn ẻm mặc váy trắng nhìn rất xinhhhh, nên chụp ảnh xong là anh cứ ôm ẻm hun miết thui,',
+            'ẻm thì ngại cam còn anh thì hóa hổ, hì hì anh iu em nhìu lắm',
+        ],
+    },
+    '15-10-2026': {
+        audio: 'memories/15-10-2026/thuyet-minh.mp3',
+        starts: [0.04],
+        lines: [
+            'Đợt này ẻm bận tiệc sinh nhật quá nên xa nhau 4 hôm mới được date, câu nhiều nhất nghe được hôm đó chắc là "anh hư"',
+        ],
+    },
+    '16-10-2026': {
+        audio: 'memories/16-10-2026/thuyet-minh.mp3',
+        starts: [0.04],
+        lines: [
+            'Đồng nghiệp ẻm đi hêt còn mình ẻm ở văn phòng và em không biết phải ăn gì, cách tốt nhất là đi ăn cùng anhh',
+        ],
+    },
+    '18-10-2026': {
+        audio: 'memories/18-10-2026/thuyet-minh.mp3',
+        starts: [0.04, 13.05],
+        lines: [
+            'Lần đầu đi ăn steak cùng nhau nên còn nhiều điều bỡ ngỡ, bản thân anh là con trai nen cũng ít khi ăn mấy món kiểu này trừ khi đi date, mà anh thi lâu lắm rui không date nên hơi lóng ngóng, nhưng có em iu chỉ cho hết rui.',
+            'Anh nghĩ sẽ áp dụng vào hôm 23 sắp tới, còn nay là chúng mình ăn 20/10 sớm cho ẻm kịp về quê với gia đình.',
+        ],
+    },
+    '19-10-2026': {
+        audio: 'memories/19-10-2026/thuyet-minh.mp3',
+        starts: [0.04, 10.9],
+        lines: [
+            'Hôm này anh đã háo hức dậy sớm để đi lấy hoa tặng iu nhưng size bị hụt so với dự tính ban đầu và cũng không đúng loại hoa, cũng bực mà gấp quá rui, anh hi vọng là em iu sẽ thích nó hic,',
+            'lời chúc anh có viết trong thiệp nhưng ôi chu cha má ơi sao mẹ em lại đọc được, thiệt là ngại quá đi',
+        ],
+    },
+    '20-10-2026': {
+        audio: 'memories/20-10-2026/thuyet-minh.mp3',
+        starts: [0.04],
+        lines: [
+            'Anh đã háo hức đếm từng ngày để chờ khoảnh khắc này, ngày tình mình chung đôiii, anh gửi iu thư mời nhaaa',
+        ],
+    },
+};
+
+/* Man moi cham khi mo lai trang bang F5 / link: trinh duyet chan tieng cho toi cu bam dau
+   tien (components/listen.js). */
+export const LISTEN = {
+    text: 'Chạm để nghe 💛',
+    hint: 'nhạc nền và lời thuyết minh',
+};
+
+/* Nhac nen rieng cua tung phong (components/music.js): toi phong la bai nay tu bat tu dau,
+   roi phong thi tra lai nhac chung. Xu ly file xem assets/audios/README.md. */
+export const ROOM_MUSIC = {
+    '20-10-2026': 'assets/audios/i-do.mp3',
+};
+
+/* Chu chung cua la thu moi (components/invite.js). Noi dung tung la thu - cac dong viet tren
+   giay - nam trong thu-moi.json cua thu muc ky niem do. */
+export const INVITE = {
+    tip: 'Chạm ra ngoài tờ thư để đóng 💛',
 };

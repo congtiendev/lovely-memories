@@ -68,6 +68,44 @@
         rgba(28, 20, 12, 0.16) 100%);
 }
 
+/* 3. Hai anh khac nhau thi vet toi o tren van khong du: hai buc tuong khac kien truc
+      cham nhau thanh mot duong cat thang. Phong nay giu san anh nen cua phong ke ben
+      (.room__bleed, gallery.js), LAT GUONG QUA DUONG MEP NOI: diem cach mep d ve ben trai
+      lay dung diem cach mep d ve ben phai cua phong ke ben. Nen sat mep hai ben trung tung
+      pixel (khong con duong cat), vao trong --bleed thi tan han vao tuong phong nay.
+      Tinh ra thi ban lat do nam DUNG khung canh cua chinh phong nay (moi nen cung ti le) va
+      lat CUNG chieu voi .room__bg cua phong nay (phong ke ben luon lat nguoc phong nay).
+      Mep phai phong nam o --edge tinh tu mep trai canh: canh rong --room-w, can giua trong
+      phong rong 100vw. */
+.room__bleed { display: none; }
+.mode-strip.in-rooms .room__bleed {
+    --bleed: 18vw;
+    --edge: calc(var(--room-w) / 2 + 50vw);
+    display: block;
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    /* Mo theo duong cong mem (nhieu moc) chu khong thang tap: thang thi thay ro mot dai
+       chuyen tiep co mep */
+    -webkit-mask-image: linear-gradient(90deg,
+        transparent calc(var(--edge) - var(--bleed)),
+        rgba(0, 0, 0, 0.2) calc(var(--edge) - var(--bleed) * 0.65),
+        rgba(0, 0, 0, 0.7) calc(var(--edge) - var(--bleed) * 0.3),
+        #000 var(--edge));
+    mask-image: linear-gradient(90deg,
+        transparent calc(var(--edge) - var(--bleed)),
+        rgba(0, 0, 0, 0.2) calc(var(--edge) - var(--bleed) * 0.65),
+        rgba(0, 0, 0, 0.7) calc(var(--edge) - var(--bleed) * 0.3),
+        #000 var(--edge));
+}
+.room__bleed img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;   /* nhu .room__bg */
+}
+.mode-strip.in-rooms .room:nth-child(even) .room__bleed img { scale: -1 1; }
+
 /* Canh trong phong GIU NGUYEN cach dat cua che do trinh chieu: hop canh van
    dung ti le anh (--room-w / --room-h) va neo day giua. KHONG duoc ep no bang
    dung o phong: lam vay hop canh se mang ti le MAN HINH, anh bi object-fit cat
@@ -77,8 +115,13 @@
     scale: 1;
     transition: none;
 }
-/* Trong dai thi khong con khai niem "chuong sau": di tiep bang cach cuon */
-.mode-strip.in-rooms .room__next { display: none; }
+/* Nut "Truoc" / "Tiep" van dung duoc: bam thi nhan vat tu di bo sang phong ke (main.js).
+   Hien san, khong cho hieu ung treo tranh nhu o trinh chieu. */
+.mode-strip.in-rooms .room__next,
+.mode-strip.in-rooms .room__prev {
+    opacity: 1;
+    transition: color 220ms ease, transform 140ms ease;
+}
 /* Tranh hien san, khong cho hieu ung treo lan luot */
 .mode-strip.in-rooms .room__art,
 .mode-strip.in-rooms .room__date {

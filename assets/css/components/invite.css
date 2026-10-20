@@ -1,0 +1,212 @@
+/* ---------- LA THU MOI ----------
+   Lay tu chuyen tau KongTien x Luyna, xem components/invite.js. Moi co la ti le cua to
+   giay (co chu do JS dat theo be rong thu), nen thu dung duoc o moi co man hinh. */
+.invite {
+    --gold-soft: #e8d9a8;
+    --ink-blue: #2b3a6b;    /* muc xanh cua net but */
+    --script: 'Dancing Script', 'Segoe Script', cursive;
+    --serif: 'EB Garamond', Georgia, 'Times New Roman', serif;
+
+    position: fixed;
+    inset: 0;
+    z-index: 100;           /* tren moi lop cua bao tang (cao nhat dang la 80) */
+    display: grid;
+    place-items: center;
+    padding: max(3vh, env(safe-area-inset-top, 0px)) max(4vw, env(safe-area-inset-right, 0px))
+             max(3vh, env(safe-area-inset-bottom, 0px)) max(4vw, env(safe-area-inset-left, 0px));
+    background: radial-gradient(ellipse at center, rgba(14, 9, 4, 0.72), rgba(8, 5, 2, 0.94));
+    opacity: 0;
+    visibility: hidden;
+    overflow: hidden;       /* thu dang roi tu tren xuong thi khong lam lo thanh cuon */
+    transition: opacity 0.6s ease, visibility 0.6s ease;
+}
+.invite.is-open {
+    opacity: 1;
+    visibility: visible;
+}
+
+.invite__letter {
+    position: relative;
+    /* Co theo CHIEU CAO man (to giay cao gap ruoi be ngang): 58dvh rong = 87% chieu cao, chua
+       cho phia duoi cho dong loi nhan. Khong chan bang px - man laptop lon ma chan o 480px thi
+       thu nho xiu giua man, chu con 11px. */
+    width: min(88vw, 58vh);
+    width: min(88vw, 58dvh);
+    aspect-ratio: 1024 / 1536;     /* khung goc cua paper.webp */
+    will-change: transform;
+}
+
+/* Roi tu tren xuong: cham day o moc 55% roi nay len, tat dan theo hai nhip nho, kem chut lac
+   cho ra to giay co quan tinh (cung nhip voi khung tranh o sanh, xem letter.css). Do dai phai
+   khop DROP trong invite.js. */
+@keyframes invite-drop {
+    0%   { transform: translateY(-120vh) rotate(-4deg); }
+    55%  { transform: translateY(2%)     rotate(1.2deg);
+           animation-timing-function: cubic-bezier(0.3, 0, 0.4, 1); }
+    72%  { transform: translateY(-1.5%)  rotate(-0.8deg); }
+    86%  { transform: translateY(0.5%)   rotate(0.3deg); }
+    100% { transform: none; }
+}
+.invite__letter.is-dropping {
+    animation: invite-drop 1.3s cubic-bezier(0.5, 0, 0.75, 0.35) both;
+}
+
+/* Bong do la anh rieng, nho va tinh, noi ra ngoai to giay - dung filter: drop-shadow thi
+   moi net but viet ra lai bat GPU lam mo ca to thu mot lan. Canvas 356 x 484 quanh to giay
+   256 x 384 (dem 50 moi phia). */
+.invite__shadow {
+    position: absolute;
+    left: -19.53125%;
+    top: -13.02083%;
+    width: 139.0625%;
+    height: 126.04167%;
+    pointer-events: none;
+    user-select: none;
+    z-index: -1;
+}
+.invite__sheet {
+    display: block;
+    width: 100%;
+    height: 100%;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+/* Vung chu tren to giay (do tu paper.webp): trong mep rach va hai goc quan, chua le cho
+   thu nhieu dong (lich hen 14 dong) khoi phai co chu qua nho */
+.invite__ink {
+    position: absolute;
+    left: 13%;
+    top: 14%;
+    width: 74%;
+    height: 72%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    font-family: var(--script);
+    font-weight: 700;
+    color: var(--ink-blue);
+}
+/* Moi dong la mot khoi overflow:hidden; JS noi dan be rong de chu hien ra theo net but */
+.invite__line {
+    width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+}
+.invite__line > span {
+    display: inline-block;
+    white-space: nowrap;
+    padding: 0.14em 0.08em 0.32em;
+    text-shadow: 0 0.012em 0.02em rgba(43, 58, 107, 0.32);
+}
+.invite__line.is-greet > span { font-size: 1.12em; }
+/* Noi va ngay viet thu: goc phai tren (le trai do JS tinh), chu nho hon mot chut */
+.invite__line.is-date > span { font-size: 0.9em; }
+.invite__line.is-sign { margin-left: 32%; }
+.invite__line.is-sign > span { font-size: 1.08em; }
+/* Tieu de thu ("Thu moi sinh nhat"): chu to nhat; le trai de nam giua do JS tinh */
+.invite__line.is-title > span { font-size: 1.3em; }
+/* Dong viet tiep cua dong tren (gio nao co hai dia diem...): thut vao ngang sau "19h30 : " */
+.invite__line.is-more { margin-left: 22%; }
+.invite__line:nth-child(odd)  > span { transform: rotate(-0.35deg); }
+.invite__line:nth-child(even) > span { transform: rotate(0.3deg); }
+
+/* Cay but: goc toa do la dau ngoi (PEN_TIP trong invite.js), JS doi but theo net chu */
+.invite__pen {
+    position: absolute;
+    left: 0;
+    top: 0;
+    transform-origin: 16.22% 89.04%;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.45s ease;
+    will-change: transform;
+}
+.invite__pen.is-on { opacity: 1; }
+
+/* Dong ho dem nguoc toi gio hen: khoang trong duoi chu ky, muc do nhu dau buu dien. Hien
+   dan sau khi but viet xong. Moi con so mot o rong co dinh: chu viet tay khong co so deu
+   be ngang, khong vay thi ca dong rung moi giay. */
+.invite__clock {
+    position: absolute;
+    left: 8%;
+    right: 8%;
+    top: 87%;
+    margin: 0;
+    text-align: center;
+    font-family: var(--script);
+    font-weight: 600;
+    line-height: 1.2;
+    color: #9b2c2c;
+    text-shadow: 0 0.012em 0.02em rgba(155, 44, 44, 0.3);
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+    pointer-events: none;
+}
+.invite__clock.is-shown { opacity: 1; }
+.invite__clock b {
+    display: inline-block;
+    min-width: 1.15em;
+    font-size: 1.25em;
+    font-weight: 700;
+    text-align: center;
+}
+
+.invite__tip {
+    position: absolute;
+    left: 50%;
+    bottom: max(2vh, 12px);
+    translate: -50% 0;
+    width: max-content;
+    max-width: 92vw;
+    text-align: center;
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: clamp(14px, 2.8vw, 18px);
+    color: var(--gold-soft);
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    pointer-events: none;
+}
+.invite__tip.is-shown { opacity: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+    .invite, .invite__pen { transition: none; }
+    .invite__letter.is-dropping { animation: none; }
+}
+
+/* ---------- TO THU TREN TUONG ----------
+   Phong co thu moi giu san cho treo to giay o cho mot buc tranh (gallery.js), nhung chi treo
+   len SAU khi thu da roi xuong va duoc doc mot lan (.room.is-invited, main.js) - de bam vao
+   xem lai. Khong hoa sac nhu anh chup man hinh (do la giay that), chi giu bong do; chu "Thu
+   moi" viet tay giua to giay va sang nhe theo nhip de nguoi xem biet bam vao day. */
+.room__invite { display: none; }
+.room.is-invited .room__invite { display: block; }
+.room__invite {
+    cursor: pointer;
+    filter: drop-shadow(0 0.5vmin 1vmin rgba(28, 18, 8, 0.55));
+    container-type: inline-size;   /* co chu "Thu moi" theo be rong to giay */
+}
+.room__invite-label {
+    position: absolute;   /* .room__art da la absolute nen nhan neo vao to giay */
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-family: 'Dancing Script', 'Segoe Script', cursive;
+    font-weight: 700;
+    font-size: 16cqw;
+    line-height: 1;
+    color: #2b3a6b;
+    pointer-events: none;
+}
+.room.is-open .room__invite-label { animation: inviteCall 2.6s ease-in-out 2s infinite; }
+@keyframes inviteCall {
+    0%, 100% { text-shadow: 0 0 0 rgba(255, 214, 140, 0); }
+    50%      { text-shadow: 0 0 0.35em rgba(255, 214, 140, 0.95); }
+}
+.room__invite:hover .room__invite-label { color: #1d2a55; }
+@media (prefers-reduced-motion: reduce) {
+    .room.is-open .room__invite-label { animation: none; }
+}

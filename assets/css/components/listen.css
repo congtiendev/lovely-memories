@@ -1,0 +1,85 @@
+/* ---------- CHAM DE NGHE ----------
+   Lop mo nhe phu len canh khi trinh duyet dang chan tieng (xem components/listen.js). Canh
+   van nhin thay phia sau: day la loi moi nghe, khong phai man cho. Cung chat lieu voi phan
+   con lai cua bao tang - chu Garamond mau giay cu, vong vang quanh hinh cai loa. */
+.listen {
+    position: fixed;
+    inset: 0;
+    z-index: 90;            /* tren nhan vat, nut, dong thoi gian (toi 80); duoi thu moi (100) */
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 1.6vmin;
+    padding: 6vmin;
+    background: radial-gradient(ellipse at center, rgba(14, 9, 4, 0.5), rgba(8, 5, 2, 0.78));
+    font-family: 'EB Garamond', Georgia, 'Times New Roman', serif;
+    font-size-adjust: ex-height 0.44;
+    text-align: center;
+    cursor: pointer;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 600ms ease, visibility 0s 600ms;
+    -webkit-tap-highlight-color: transparent;
+}
+.listen.is-open {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 600ms ease;
+}
+.listen:focus { outline: none; }
+
+/* Vong tron vang, hinh cai loa o giua, toa sang theo nhip de keo mat vao */
+.listen__badge {
+    display: grid;
+    place-items: center;
+    width: clamp(4.2rem, 15vmin, 6.5rem);
+    aspect-ratio: 1;
+    border: 2px solid rgba(232, 201, 138, 0.85);
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, rgba(255, 244, 214, 0.18), rgba(30, 20, 9, 0.55));
+    box-shadow: 0 0 0 0 rgba(232, 201, 138, 0.55), 0 0.6vmin 2vmin rgba(0, 0, 0, 0.5);
+    animation: listenCall 2.2s ease-out infinite;
+}
+.listen__badge svg {
+    width: 52%;
+    height: 52%;
+    fill: none;
+    stroke: #f3e2b8;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.listen__badge path:first-child { fill: #f3e2b8; }
+/* Hai vach song am hien dan lan luot: loa dang "keu" */
+.listen__wave { animation: listenWave 2.2s ease-in-out infinite; }
+.listen__wave--far { animation-delay: 0.35s; }
+
+@keyframes listenCall {
+    0%   { box-shadow: 0 0 0 0 rgba(232, 201, 138, 0.55), 0 0.6vmin 2vmin rgba(0, 0, 0, 0.5); }
+    70%  { box-shadow: 0 0 0 2.4vmin rgba(232, 201, 138, 0), 0 0.6vmin 2vmin rgba(0, 0, 0, 0.5); }
+    100% { box-shadow: 0 0 0 0 rgba(232, 201, 138, 0), 0 0.6vmin 2vmin rgba(0, 0, 0, 0.5); }
+}
+@keyframes listenWave {
+    0%, 100% { opacity: 0.25; }
+    50%      { opacity: 1; }
+}
+
+.listen__text {
+    margin-top: 0.6vmin;
+    font-size: clamp(1.45rem, 4.6vmin, 2.3rem);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: #f6ead0;
+    text-shadow: 0 0.1em 0.5em rgba(0, 0, 0, 0.75);
+}
+.listen__hint {
+    font-size: clamp(0.95rem, 2.5vmin, 1.2rem);
+    font-style: italic;
+    color: rgba(243, 226, 184, 0.82);
+    text-shadow: 0 0.1em 0.4em rgba(0, 0, 0, 0.75);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .listen, .listen.is-open { transition: none; }
+    .listen__badge, .listen__wave { animation: none; }
+}

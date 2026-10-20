@@ -14,6 +14,11 @@ import { arrange, WALLS } from '../layout.js';
 /* Ban cat ngang hay doc - dung nguong voi <source media> trong markup */
 const wideCrop = matchMedia('(min-aspect-ratio: 1/1)');
 
+/* To giay cua thu moi, treo tren tuong o phong co `letter` (xem components/invite.js).
+   Kich thuoc la cua chinh anh paper.webp. */
+const SHEET = { name: 'thu-moi', sheet: true, src: 'assets/images/invite/paper.webp',
+                width: 1024, height: 1536 };
+
 export function buildGallery({ container, chapters, labels = {} }) {
     const built = chapters.map((chapter, i) => {
         const element = document.createElement('div');
@@ -26,8 +31,11 @@ export function buildGallery({ container, chapters, labels = {} }) {
             + (chapter.scene?.plain ? ' room--plain' : '');
         // Thu tu treo phai dung MOT ban duy nhat cho ca markup lan tinh bo cuc,
         // khong thi buc nay se nhan kich thuoc tinh cho buc kia.
-        const order = inSlots(chapter.arts);
-        element.innerHTML = markup(chapter, order, labels, i < chapters.length - 1);
+        // To thu moi (neu co) treo nhu buc cuoi cung: cung thuat toan tim cho, cung lop
+        // .room__art de nhan toa do, chi khac la bam vao thi mo lai thu chu khong phong to.
+        // No chi hien sau khi thu da roi xuong mot lan (xem .room.is-invited, invite.css).
+        const order = [...inSlots(chapter.arts), ...(chapter.letter ? [SHEET] : [])];
+        element.innerHTML = markup(chapter, order, labels, chapters[i + 1], i > 0);
         container.append(element);
         return { chapter, order, element, room: new Room({ element }) };
     });
@@ -84,9 +92,17 @@ function inSlots(arts) {
     return [rest[0], squarest, rest[1]];
 }
 
-function markup(chapter, order, labels, hasNext) {
+function markup(chapter, order, labels, next, hasPrev) {
     const scene = chapter.scene;
+    const hasNext = !!next;
     const arts = order.map((art, i) => {
+        if (art.sheet) return `
+            <button class="room__art room__art--${i + 1} room__invite" type="button"
+                    style="--art-ar: ${(art.width / art.height).toFixed(4)}" aria-label="Mở thư mời">
+                <img src="${art.src}" width="${art.width}" height="${art.height}"
+                     fetchpriority="low" decoding="async" alt="">
+                <span class="room__invite-label">Thư mời</span>
+            </button>`;
         const label = labels[`${chapter.folder}/${art.name}`] ?? `Xem tranh ngày ${dateLabel(chapter.folder)}`;
         return `
             <button class="room__art room__art--${i + 1}" type="button"
@@ -102,11 +118,31 @@ function markup(chapter, order, labels, hasNext) {
     return `
         <div class="room__scene">
             ${scene ? picture(scene) : ''}
+            ${bleed(scene, next?.scene)}
             ${arts}
             <time class="room__date" datetime="${isoDate(chapter.folder)}">${dateLabel(chapter.folder)}</time>
+            ${hasPrev ? '<button class="room__prev" type="button">Trước</button>' : ''}
             ${hasNext ? '<button class="room__next" type="button">Tiếp</button>' : ''}
         </div>
         <div class="room__viewer"><img alt=""></div>`;
+}
+
+/* Dai ngang: phong ke ben dung anh nen KHAC thi mep noi la mot vet cat thang (lat guong chi
+   cuu duoc hai phong cung anh). Nen dat san o mep phai phong nay mot ban sao anh nen cua
+   phong ke ben, dung cho no se nam neu phong do lan sang, roi cho no mo dan vao trong: sat
+   mep thi trung tung pixel voi phong ke ben, vao trong thi tan han vao tuong phong nay
+   (strip.css). Nam TRONG canh, duoi tranh, de khong phu mo len buc treo sat mep. Chi dung
+   ban cat ngang (dai ngang luon cat ngang) va loading="lazy": o che do trinh chieu lop nay
+   an nen anh khong bi tai. */
+function bleed(scene, nextScene) {
+    const wide = nextScene?.wide;
+    if (!scene || !wide || nextScene.folder === scene.folder) return '';
+    return `
+            <div class="room__bleed" aria-hidden="true">
+                <img src="${wide.src}" srcset="${wide.srcset.join(', ')}" sizes="100vw"
+                     width="${wide.width}" height="${wide.height}"
+                     loading="lazy" decoding="async" alt="">
+            </div>`;
 }
 
 /* Man doc dung ban cat doc, khong phai ban ngang bi nen. Nguong doi anh phai

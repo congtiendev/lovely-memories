@@ -27,7 +27,8 @@ const FRAMES = { down: 4, left: 4, right: 4, up: 4, talk: 6, idle: 6 };
    la cu chop mat nhanh - chop moi ~2.5s, du de thay no song, khong lap khung nao
    cung deu nhu may. */
 const IDLE_MS = [650, 650, 90, 110, 90, 650];
-const ASPECT = 300 / 457;   // be ngang / chieu cao cua moi frame
+const RETRY_MAX_MS = 3000;  // khoang cho toi da giua hai lan thu tai lai mot frame hong
+const ASPECT = 300 / 457;  // be ngang / chieu cao cua moi frame
 const HEAD_X = 0.54;        // tam cai dau nam o 54% be ngang frame (162/300), khong phai 50%: duoi bong bong chi vao day
 
 const wideCrop = matchMedia('(min-aspect-ratio: 1/1)');
@@ -60,6 +61,8 @@ const PROFILES = {
 const FOLLOW_TAU = 150;   // ms: nen cuon theo nhan vat cham mot nhip, khong dinh cung vao no
 const SPEED = 0.42;       // chieu cao canh moi giay, theo chieu ngang
 const DEPTH_SPEED = 0.5;  // di len/xuong cham hon vi san ngan
+const COLUMN_X = 0.3;          // dai ngang: nhan vat dung o cot (30% be ngang phong), khong che ngay o giua nen
+const ROOM_WALK_SPEED = 1.2;   // boi so SPEED khi tu di sang phong ke (bam "Tiep" o dai ngang): ~4-5s, gan toc do di bo thuong de buoc chan khop voi quang duong
 
 const KEYS = {
     ArrowLeft: 'left', a: 'left', A: 'left',
@@ -82,6 +85,8 @@ const lerp = (a, b, t) => a + (b - a) * t;
 export class Character {
     #root;
     #onCamera;
+    #onRoom;
+    #room = null;       // dai ngang: phong nhan vat dang dung, lan bao gan nhat qua onRoom
     #cam = null;        // vi tri cuon dang ve (so thuc) khi nen dang cuon theo nhan vat
     #index = 0;         // chi so phong dang xem (cho dai ngang: dat nhan vat vao dung phong)
     #frames = {};       // { down: [img x4], ..., talk: [img x6] }
@@ -94,6 +99,7 @@ export class Character {
     #at = { room: null, gate: null, strip: null };   // vi tri nho lai cho tung noi: { x, y }
     #locked = false;    // khoa phim (dang tu di)
     #auto = null;       // chuyen dong tu dong dang chay
+    #panTo = null;      // dai ngang: vi tri cuon (px) nen cuon toi va giu o do sau khi tu di xong, thay vi can nhan vat
     #shrink = 1;        // he so thu nho them khi tu di vao trong
     #opacity = 1;
     #facing = 'down';
@@ -109,10 +115,14 @@ export class Character {
      * @param enabled ham tra ve true khi duoc phep dieu khien (khong co lop phu nao dang mo)
      * @param onCamera goi truoc khi nen bat dau cuon theo nhan vat: ben cuon tay (truot mem,
      *        quan tinh) phai dung lai, khong thi hai ben keo scrollLeft nguoc nhau
+     * @param onRoom(index) dai ngang: nhan vat vua BUOC sang phong khac. Bao ngay luc qua
+     *        mep phong, khong doi nen cuon xong - nguoi xem bam "Thuyet minh" luc nen con
+     *        dang truot theo thi van dung phong nhan vat dang dung
      */
-    constructor({ enabled = () => true, onCamera = () => {} } = {}) {
+    constructor({ enabled = () => true, onCamera = () => {}, onRoom = () => {} } = {}) {
         this.#enabled = enabled;
         this.#onCamera = onCamera;
+        this.#onRoom = onRoom;
         this.#root = document.createElement('div');
         this.#root.className = 'character';
         this.#root.setAttribute('aria-hidden', 'true');
@@ -154,6 +164,7 @@ export class Character {
         this.#kind = kind;
         this.#reach = reach;
         this.#cam = null;
+        this.#panTo = null;
         if (changed) {
             this.#scene = scene;
             this.#load();
@@ -167,12 +178,23 @@ export class Character {
         else this.#unlock();
         if (carry) this.#carryIn(carry);
         else this.#fit(changed);
+        // Moc de so: chi bao khi nhan vat tu buoc qua mep phong, khong bao luc vua dat vao
+        this.#room = this.roomIndex;
+    }
+
+    /** Dai ngang: phong nhan vat dang dung (theo vi tri chan, khong theo nen cuon). Ngoai dai
+        ngang thi null - o do nhan vat khong ra khoi phong cua minh. */
+    get roomIndex() {
+        if (this.#kind !== 'strip' || !this.#scene || !this.#at.strip) return null;
+        const [x] = this.#pos();
+        return Math.min(this.#rooms() - 1, Math.max(0, Math.floor(x / 100)));
     }
 
     /** Dai ngang: dua nhan vat ve mot phong khac (nhay tu dong thoi gian), dat o cho xuat phat cua phong do. */
     warp(index) {
         this.#index = index;
         if (this.#kind === 'strip' && this.#scene) this.#fit(true);
+        this.#room = this.roomIndex;   // nhay toi chu khong buoc qua: khong bao onRoom
     }
 
     #carryIn({ local, y }) {
@@ -192,6 +214,10 @@ export class Character {
         this.shutUp();
         this.cancel();
         this.#held = [];
+        // Buoc vao cua la mo dan + nho dan: roi canh thi tra ve nhu cu, khong thi vao
+        // phong dau tien (cong -> sanh -> phong) nhan vat van vo hinh
+        this.#opacity = 1;
+        this.#shrink = 1;
         this.#scene = null;
         this.#root.remove();
         this.#stop();
@@ -249,15 +275,38 @@ export class Character {
      *        de di dung chung khoang thoi gian do, bat ke quang duong.
      * @param opts.shrink cuoi duong nhan vat con bao nhieu phan chieu cao (1 = khong doi)
      * @param opts.fade true thi mo dan o doan cuoi
+     * @param opts.pan (dai ngang) vi tri cuon dich, px: nen cuon toi do cung nhip voi buoc di,
+     *        thay vi can nhan vat o giua man hinh
      */
-    walkTo(to, { speed = 1, duration = 0, shrink = 1, fade = false } = {}) {
+    walkTo(to, { speed = 1, duration = 0, shrink = 1, fade = false, pan = null } = {}) {
         this.cancel();
         return new Promise(resolve => {
             this.#auto = {
-                from: null, to, speed, duration, shrink, fade, resolve,
+                from: null, to, speed, duration, shrink, fade, pan, panFrom: null, resolve,
                 elapsed: 0,
             };
         });
+    }
+
+    /**
+     * Dai ngang: tu di bo toi cot cua phong `index` (giu nguyen hang dang dung). Nen cuon di
+     * cung luc, voi cung nhip, toi dung phong do - nen toi noi phong nam tron trong man hinh
+     * (nhan vat khong o giua man nhu luc tu di, vi cot lech ve mot ben).
+     * Khoa phim trong luc di. Tra ve Promise<boolean>: true neu toi noi, false neu bi huy.
+     */
+    async walkToRoom(index) {
+        if (this.#kind !== 'strip' || !this.#scene) return false;
+        this.shutUp();
+        this.lock();
+        const [, y] = this.#pos();
+        const pan = index * this.#scene.clientWidth;
+        this.#panTo = pan;
+        const arrived = await this.walkTo(
+            { x: (index + COLUMN_X) * 100, y },
+            { speed: ROOM_WALK_SPEED, pan },
+        );
+        if (arrived) this.#unlock();
+        return arrived;
     }
 
     /** Huy chuyen dong tu dong dang chay (neu co). */
@@ -281,11 +330,14 @@ export class Character {
             const img = new Image();
             img.src = `${DIR}${name}-${i}.webp`;
             img.alt = '';
-            // Tai hong mot lan (dev server dang tai lai file, mang chap chon) thi
-            // thu lai thay vi de icon anh hong nam tren man hinh
+            // Tai hong (dev server dang tai lai file, file chua kip co, mang chap chon)
+            // thi thu lai mai voi khoang cho tang dan toi RETRY_MAX_MS, khong bo cuoc:
+            // bo cuoc la nhan vat vo hinh cho toi khi nguoi xem tai lai trang.
             let retries = 0;
             img.addEventListener('error', () => {
-                if (retries++ < 3) setTimeout(() => { img.src = `${DIR}${name}-${i}.webp?r=${retries}`; }, 400 * retries);
+                retries++;
+                const wait = Math.min(RETRY_MAX_MS, 400 * retries);
+                setTimeout(() => { img.src = `${DIR}${name}-${i}.webp?r=${retries}`; }, wait);
             });
             img.decoding = 'async';
             img.fetchPriority = 'low';   // dung tranh anh nen cong dang can ve truoc
@@ -350,10 +402,21 @@ export class Character {
         if (!active && this.#cam === null) return;
         const w = el.clientWidth;
         const [x] = this.#pos();
-        const target = Math.min(el.scrollWidth - w, Math.max(0, x / 100 * w - w / 2));
+        // Nguoi xem tu di tiep: thoi giu phong dich cua lan tu di truoc
+        if (active && !this.#auto) this.#panTo = null;
+        let target = Math.min(el.scrollWidth - w, Math.max(0, x / 100 * w - w / 2));
         if (this.#cam === null) {
             this.#onCamera();
             this.#cam = el.scrollLeft;
+        }
+        const a = this.#auto;
+        if (a?.pan != null) {
+            // Cuon cung nhip voi buoc di: tu cho dang dung toi dau phong dich
+            a.panFrom ??= this.#cam;
+            const t = a.total > 0 ? Math.min(1, a.elapsed / a.total) : 1;
+            target = lerp(a.panFrom, a.pan, t);
+        } else if (this.#panTo !== null) {
+            target = this.#panTo;
         }
         this.#cam += (target - this.#cam) * (1 - Math.exp(-dtMs / FOLLOW_TAU));
         el.scrollLeft = this.#cam;
@@ -368,12 +431,22 @@ export class Character {
         // Mount luc canh con an (cong quay lai tu sanh) thi chua dat duoc vi tri
         if (!this.#at[this.#kind]) this.#fit(true);
 
+        const [x0] = this.#pos();
         if (this.#auto) {
             this.#stepAuto(dtMs, now, w, h);
         } else {
             this.#stepManual(dt, now, w, h);
         }
-        if (this.#kind === 'strip') this.#follow(dtMs);
+        if (this.#kind === 'strip') {
+            // Chi xet khi nhan vat vua di chuyen: dung yen ma nguoi xem keo nen sang phong
+            // khac thi phong dang xem la phong tren man hinh, khong phai phong cua nhan vat
+            const room = this.#pos()[0] !== x0 ? this.roomIndex : this.#room;
+            if (room !== this.#room) {
+                this.#room = room;
+                this.#onRoom(room);
+            }
+            this.#follow(dtMs);
+        }
 
         const fps = this.#state === 'talk' ? TALK_FPS : WALK_FPS;
         const hold = this.#state === 'idle' ? IDLE_MS[this.#frame] : 1000 / fps;
@@ -543,11 +616,26 @@ export class Character {
         s.opacity = this.#opacity < 1 ? this.#opacity.toFixed(3) : '';
 
         if (this.#bubble?.isOpen) this.#placeBubble();
-        const img = this.#frames[this.#state]?.[this.#frame];
+        const img = this.#pick();
         if (img === this.#shown) return;
         this.#shown?.classList.remove('is-on');
         img?.classList.add('is-on');
         this.#shown = img;
+    }
+
+    /* Frame can ve luc nay. Frame chua tai xong / bi hong thi dung tam frame khac da co
+       (cung hoat anh, roi toi frame nao da tai duoc) de nhan vat khong bien mat. */
+    #pick() {
+        const ready = img => img?.complete && img.naturalWidth > 0;
+        const want = this.#frames[this.#state]?.[this.#frame];
+        if (ready(want)) return want;
+        const same = this.#frames[this.#state]?.find(ready);
+        if (same) return same;
+        for (const list of Object.values(this.#frames)) {
+            const any = list.find(ready);
+            if (any) return any;
+        }
+        return want;
     }
 
     /** Duoi bong bong chi ve phia dau nhan vat; dung o nua trai man hinh thi bong bong

@@ -16,6 +16,8 @@ const BUBBLE_OVERHEAD = HOLD + 260 + THINKING;   // + thu lai (SPEECH.leave) + b
 const METADATA_TIMEOUT = 4000;
 
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+// File wav rong (0 mau): chi de goi play() mot lan trong cu bam, xem prime()
+const SILENCE = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';
 
 export class Narrator {
     #button;
@@ -23,26 +25,39 @@ export class Narrator {
     #character;
     #music;
     #rooms;
+    #onDone;
     #audio = new Audio();
     #folder = null;
     #active = false;
+    #primed = false;    // the audio da tung play() trong mot cu bam (iOS moi cho phat ve sau)
+    #voiced = false;    // luot dang chay co tieng (false: trinh duyet chan, chi go chu)
     #run = 0;           // moi lan phat / dung la mot luot; luot cu het hieu luc
 
     /**
      * @param rooms { [folder]: { audio?: string, lines: string[] } }
      * @param music ha nhac nen khi co loi doc (xem Music.duck)
+     * @param onDone(folder) goi khi noi HET loi cua mot phong (bam nut hay tu thuyet minh deu
+     *        vay), khong goi khi bi dung giua chung
      */
-    constructor({ button, character, rooms, music }) {
+    constructor({ button, character, rooms, music, onDone = () => {} }) {
         this.#button = button;
         this.#label = button.querySelector('.narrate__label');
         this.#character = character;
         this.#rooms = rooms;
         this.#music = music;
+        this.#onDone = onDone;
         this.#audio.preload = 'none';
         button.addEventListener('click', event => {
             event.stopPropagation();   // khong de noi len .room thanh lenh lat sang phong khac
-            if (this.#active) this.stop();
-            else this.play();
+            // Dang go chu ma KHONG co tieng vi phong tu doc luc chua co cu bam nao (trinh duyet
+            // chan): bam nut la muon nghe, nen doc lai tu dau kem tieng chu khong dung
+            const muted = this.#active && !this.#voiced && !!this.#rooms[this.#folder]?.audio;
+            if (this.#active && !muted) {
+                this.stop();
+                return;
+            }
+            this.stop();
+            this.play();
         });
         this.#sync();
     }
@@ -55,9 +70,26 @@ export class Narrator {
         this.#sync();
     }
 
+    /**
+     * Goi NGAY trong cu bam ("Truoc"/"Tiep") khi se thuyet minh SAU mot luc (nhan vat con di
+     * bo, tam bien chuyen canh con che): iOS chi cho the audio phat tieng ve sau neu no da
+     * tung play() trong mot cu bam. Phat mot doan rong, tat tieng, roi dung.
+     */
+    prime() {
+        if (this.#primed || this.#active) return;
+        const audio = this.#audio;
+        audio.muted = true;
+        audio.src = SILENCE;
+        // Chi coi la da mo khoa khi phat thu THAT SU duoc: cu cham ma trinh duyet khong tinh la
+        // tuong tac (pointerdown cua ngon tay...) thi lan sau con thu lai
+        audio.play().then(() => { this.#primed = true; audio.pause(); }, () => {})
+            .finally(() => { audio.muted = false; });
+    }
+
+    /** Thuyet minh phong dang dat. Tra ve true neu noi het, false neu bi dung / doi phong giua chung. */
     async play() {
         const room = this.#rooms[this.#folder];
-        if (!room?.lines?.length) return;
+        if (!room?.lines?.length) return false;
         const run = ++this.#run;
         const alive = () => run === this.#run;
         this.#active = true;
@@ -65,9 +97,13 @@ export class Narrator {
 
         // play() phai goi NGAY trong luc xu ly cu bam (iOS khong cho phat sau khi da await),
         // nen bat dau phat truoc roi moi cho biet do dai.
-        const voice = room.audio ? await this.#startVoice(room.audio) : null;
-        if (!alive()) return;
-        if (voice) this.#music?.duck(true);
+        const voice = room.audio ? await this.#startVoice(room.audio, run) : null;
+        if (!alive()) return false;
+        this.#voiced = !!voice;
+        if (voice) {
+            this.#primed = true;   // da phat duoc tieng: the audio da mo khoa
+            this.#music?.duck(true);
+        }
 
         // Moc bat dau tung cau: do san tu cho nghi that trong audio (room.starts) thi dung,
         // khong thi chia theo so chu (sai lech vi moi cau doc nhanh cham khac nhau).
@@ -84,17 +120,26 @@ export class Narrator {
                 span = (i + 1 < starts.length ? starts[i + 1] : voice.duration) - starts[i];
             }
             if (voice) await this.#until(at, run);
-            if (!alive()) return;
+            if (!alive()) return false;
             const done = await this.#character.say(line, voice
                 ? { typingMs: Math.max(MIN_TYPING, span * 1000 - BUBBLE_OVERHEAD), hold: HOLD }
                 : {});
-            if (!alive() || !done) return;
+            if (!alive() || !done) return false;
             elapsed += span;
         }
         // Chu xong thi cho not tieng (neu con), roi tra lai nhac nen
         if (voice) await this.#until(Infinity, run);
-        if (alive()) this.#finish();
+        if (!alive()) return false;
+        this.#finish();
+        this.#onDone(this.#folder);
+        return true;
     }
+
+    /** Dang thuyet minh (ke ca luc chi go chu, khong co tieng). */
+    get isActive() { return this.#active; }
+
+    /** Luot dang chay co phat duoc tieng khong. */
+    get isVoiced() { return this.#active && this.#voiced; }
 
     stop() {
         this.#run++;
@@ -111,7 +156,7 @@ export class Narrator {
     }
 
     /** Phat file long tieng tu dau. Tra ve { duration (giay) } hoac null neu khong phat duoc. */
-    async #startVoice(url) {
+    async #startVoice(url, run) {
         const audio = this.#audio;
         audio.src = url;
         audio.currentTime = 0;
@@ -121,9 +166,15 @@ export class Narrator {
                 if (audio.readyState >= 1) resolve();
                 else audio.addEventListener('loadedmetadata', resolve, { once: true });
             }),
+            // Trinh duyet chan phat thi metadata co the khong bao gio ve: thoi cho, go chu ngay
+            started.then(ok => ok ? new Promise(() => {}) : undefined),
             wait(METADATA_TIMEOUT),
         ]);
-        if (!(await started) || !Number.isFinite(audio.duration)) {
+        const ok = await started;
+        // Luot nay da bi luot moi thay (bam lai nut, cu bam dau tien doc lai co tieng...): the
+        // audio gio la cua luot moi, dung dung vao - pause() o day se cat ngang tieng cua no
+        if (run !== this.#run) return null;
+        if (!ok || !Number.isFinite(audio.duration)) {
             audio.pause();
             return null;   // trinh duyet chan phat / file loi: chi go chu, khong co tieng
         }
