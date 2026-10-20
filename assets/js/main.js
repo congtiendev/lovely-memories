@@ -9,6 +9,7 @@ import { Letter } from './components/letter.js';
 import { Interlude } from './components/interlude.js';
 import { Timeline } from './components/timeline.js';
 import { buildGallery } from './components/gallery.js';
+import { loaded } from './components/room.js';
 import { Modes } from './components/strip.js';
 import { Music } from './components/music.js';
 import { Tour } from './components/tour.js';
@@ -114,6 +115,24 @@ const narrator = new Narrator({
     },
 });
 
+/* ---------- CHO TAI XONG ROI MOI NOI ----------
+   Mang cham thi nhan vat, canh va file loi doc ve sau cau noi: bong bong hien ra khi chua thay
+   nhan vat dau, tranh dang duoc ke chua hien, tieng khung giua cau. Nen truoc moi lan tu noi
+   (chao o cong, tu thuyet minh khi toi phong) cho DUNG nhung thu lan noi do can - khong cho
+   ca trang: anh cua moi phong deu nam san trong trang, cho het la cho tai hang tram MB.
+   Mang hong hay qua cham thi toi da LOAD_BUDGET roi cu noi. */
+const LOAD_BUDGET = 12000;
+
+function readyToSpeak(folder) {
+    const parts = [character.ready(), narrator.preload(folder), document.fonts?.ready];
+    if (folder === 'gate') {
+        parts.push(...[...document.querySelectorAll('.stage--gate img, .doorway img')].map(loaded));
+    } else {
+        parts.push(roomOf.get(folder)?.ready());
+    }
+    return Promise.race([Promise.all(parts), wait(LOAD_BUDGET)]);
+}
+
 /* ---------- THU MOI ----------
    Phong co thu-moi.json (CHAPTERS[].letter): thuyet minh xong thi la thu roi tu tren xuong
    va but bat dau viet (components/invite.js). Doc xong mot lan thi to thu duoc treo len
@@ -139,6 +158,9 @@ async function greet() {
     greeted = true;
     await wait(SPEECH.startDelay);
     const here = () => current === 'gate' && !entering;
+    if (!here()) return;
+    // Mang cham (trang that tren GitHub Pages): bong bong khong duoc hien truoc nhan vat
+    await readyToSpeak('gate');
     if (!here()) return;
 
     // Trang vua mo, chua co cu bam nao: trinh duyet chan tieng nen cau chao chi co chu.
@@ -418,6 +440,7 @@ function restoreChapter(folder, from) {
         room.settle();
         offerTour();
         narrateSoon(folder);
+        warmAround(folder);
         return;
     }
 
@@ -432,11 +455,12 @@ function restoreChapter(folder, from) {
         if (run !== hop) return;
         room.settle();
         leaveRooms(folder);
-        await room.warmup();
+        await room.ready();   // ca tranh, khong chi anh nen: tam bien mo ra la tranh da treo du
     }).then(() => {
         if (run !== hop) return;   // da di phong khac giua luc tam bien che
         offerTour();
         narrateSoon(folder);
+        warmAround(folder);   // tai san hai phong ke ben cho lan bam Truoc / Tiep sau
     });
 }
 
@@ -469,6 +493,8 @@ function narrateSoon(folder, delay = NARRATE_AFTER) {
     const ready = () => current === folder && !narrator.isActive && !listen.isOpen
         && !tour.isOpen && !invite.isOpen && !timeline.isOpen && !roomOf.get(folder)?.isViewingArt;
     narrateTimer = setTimeout(async () => {
+        if (!ready()) return;
+        await readyToSpeak(folder);   // anh phong, tranh, nhan vat, file loi doc
         if (!ready()) return;
         // Trinh duyet dang chan tieng (F5, mo link): moi cham thay vi go chu ma khong co tieng
         if (await needsTap()) {

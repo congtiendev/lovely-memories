@@ -32,6 +32,8 @@ export class Narrator {
     #primed = false;    // the audio da tung play() trong mot cu bam (iOS moi cho phat ve sau)
     #voiced = false;    // luot dang chay co tieng (false: trinh duyet chan, chi go chu)
     #run = 0;           // moi lan phat / dung la mot luot; luot cu het hieu luc
+    #fetching = new Map();   // url -> Promise: dang tai ca file loi doc ve may
+    #local = new Map();      // url -> blob: URL cua file da tai xong, phat ngay khong phai cho mang
 
     /**
      * @param rooms { [folder]: { audio?: string, lines: string[] } }
@@ -60,6 +62,23 @@ export class Narrator {
             this.play();
         });
         this.#sync();
+    }
+
+    /**
+     * Tai TRON file loi doc cua phong `folder` ve may truoc khi doc. Phat thang tu mang thi mang
+     * cham se khung giua cau: tieng dung ma chu trong bong bong van chay theo thoi gian da tinh,
+     * lech nhau. Tai xong thi #startVoice dung ban trong may. Loi mang thi thoi, phat tu mang.
+     */
+    preload(folder) {
+        const url = this.#rooms[folder]?.audio;
+        if (!url) return Promise.resolve();
+        if (!this.#fetching.has(url)) {
+            this.#fetching.set(url, fetch(url)
+                .then(res => (res.ok ? res.blob() : null))
+                .then(blob => { if (blob) this.#local.set(url, URL.createObjectURL(blob)); })
+                .catch(() => {}));
+        }
+        return this.#fetching.get(url);
     }
 
     /** Phong dang xem doi (hoac roi khoi phong: null). Chi hien nut khi phong co loi. */
@@ -158,7 +177,7 @@ export class Narrator {
     /** Phat file long tieng tu dau. Tra ve { duration (giay) } hoac null neu khong phat duoc. */
     async #startVoice(url, run) {
         const audio = this.#audio;
-        audio.src = url;
+        audio.src = this.#local.get(url) ?? url;   // da tai ve may (preload) thi khong phai cho mang
         audio.currentTime = 0;
         const started = audio.play().then(() => true, () => false);
         await Promise.race([
