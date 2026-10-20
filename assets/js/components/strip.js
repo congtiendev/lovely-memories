@@ -267,6 +267,11 @@ export class Modes {
         this.#raf = 0;
     }
 
+    /** Dung truot mem / quan tinh: co ben khac (nhan vat) sap cam lai thanh cuon. */
+    freeze() {
+        this.#stopGlide();
+    }
+
     /** Dua mot ky niem ve giua dai. */
     scrollTo(folder, { smooth = true } = {}) {
         const i = this.#folders.indexOf(folder);

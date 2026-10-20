@@ -10,7 +10,7 @@
     --door-h: 49.00%;   /* day cua cham nguong o 94.60% chieu cao anh */
 
     --swing: 72deg;   /* duoi 90 do de van thay mat truoc cham tro */
-    --dur: 1200ms;
+    --dur: 2800ms;   /* cua mo cham: khop TIMING.doors trong js/config.js */
     --thick: 5.5%;   /* be day canh cua, tinh theo be rong canh */
 
     /* Diem tu cua phoi canh: tam o cua, cung la huong may bay lao toi */

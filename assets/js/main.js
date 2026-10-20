@@ -1,6 +1,6 @@
-import { TIMING, calm } from './config.js';
+import { TIMING, SPEECH, calm } from './config.js';
 import { Router, BASE_ROUTES } from './router.js';
-import { MESSAGE, ART_LABELS, TOUR } from './content.js';
+import { MESSAGE, ART_LABELS, TOUR, GREETING, LETS_GO, NARRATION } from './content.js';
 import { CHAPTERS } from './chapters.js';
 import { gapLabel, dateLabel } from './format.js';
 import { Doorway } from './components/doorway.js';
@@ -12,6 +12,8 @@ import { buildGallery } from './components/gallery.js';
 import { Modes } from './components/strip.js';
 import { Music } from './components/music.js';
 import { Tour } from './components/tour.js';
+import { Character } from './components/character.js';
+import { Narrator } from './components/narrator.js';
 
 const doorway = new Doorway(document.querySelector('.doorway'));
 const letter = new Letter({
@@ -34,6 +36,7 @@ const gallery = buildGallery({
 });
 const folders = gallery.map(({ chapter }) => chapter.folder);
 const roomOf = new Map(gallery.map(({ chapter, room }) => [chapter.folder, room]));
+const elementOf = new Map(gallery.map(({ chapter, element }) => [chapter.folder, element]));
 
 const router = new Router({
     ...BASE_ROUTES,
@@ -56,6 +59,8 @@ const modes = new Modes({
             router.go(folder, { silent: true });
             timeline.mark(folder);
             warmAround(folder);
+            seatCharacter(folder);
+            narrator.setRoom(folder);
         }
     },
     onChange: () => reshowCurrent(),
@@ -66,6 +71,70 @@ const modes = new Modes({
    dau vao phong thi phai co ai do chi cho biet bam vao dau. Chi chay mot lan;
    muon xem lai thi co dong cuoi trong bang chon che do. */
 const tour = new Tour({ element: document.querySelector('.tour'), steps: TOUR });
+
+/* ---------- NHAN VAT + CUA ----------
+   Nhan vat di lai bang phim mui ten / WASD. O cong, toi gan cua thi cua tu mo,
+   nhan vat tu buoc vao trong, nho dan, roi moi chuyen canh sang sanh. O cac
+   phong thi no di theo nguoi xem tu phong nay sang phong khac. Chi nhan phim
+   khi khong co lop phu nao dang chiem man hinh. */
+const gateStage = document.querySelector('.stage--gate');
+const DOOR_X = 49.9;       // tam o cua, % be ngang canh = --door-l + --door-w / 2 (tokens.css)
+const DOOR_NEAR = 4.5;     // cach tam cua toi da bao nhieu % thi cua tu mo
+const DOOR_FOOT = 95.6;    // chan nhan vat khi dung truoc cua (nguong cua o 94.6%)
+const DOOR_INSIDE = 85;    // diem cuoi khi buoc vao trong cua
+let entering = false;      // dang di qua cua: khoa phim, bo qua cu bam them
+let entryRun = 0;          // moi lan vao cua / huy la mot luot; luot cu het hieu luc
+const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+const roomsEl = document.querySelector('.rooms');
+const character = new Character({
+    onCamera: () => modes.freeze(),
+    enabled: () => {
+        if (current === 'gate') return !entering;
+        return roomOf.has(current)
+            && !document.querySelector('.room.art-open')
+            && !timeline.isOpen
+            && !tour.isOpen
+            && !document.querySelector('.mode.is-open');
+    },
+});
+/* Nut "Thuyet minh": nhan vat doc loi cua phong dang xem (content.js NARRATION). */
+const narrator = new Narrator({
+    button: document.querySelector('.narrate'),
+    character,
+    music,
+    rooms: NARRATION,
+});
+
+/* O cong: chao xong thi hoi "Chung ta bat dau nhe?" kem nut OK; bam OK thi nhan vat
+   di mo cua va vao. Chi lam mot lan moi lan mo trang, vao lai cong thi khong nhac lai
+   (van tu di toi cua duoc, hoac bam vao cua). Di toi cua giua chung thi bo het. */
+let greeted = false;
+async function greet() {
+    if (greeted) return;
+    greeted = true;
+    await wait(SPEECH.startDelay);
+    const here = () => current === 'gate' && !entering;
+    if (!here() || !(await character.say(GREETING)) || !here()) return;
+    if (await character.say(LETS_GO.text, { action: LETS_GO.button }) && here()) enterThroughDoor();
+}
+
+/** Dua nhan vat vao man hinh dang xem: san cong, hoac phong; sanh thi cat di. */
+function seatCharacter(route) {
+    if (elementOf.has(route) && modes.isStrip) {
+        // Dai ngang: mot nhan vat cho ca dai, khong gan vao phong nao
+        character.mount(roomsEl, 'strip', { index: folders.indexOf(route) });
+    } else if (elementOf.has(route)) {
+        character.mount(elementOf.get(route).querySelector('.room__scene'), 'room');
+    } else if (route === 'gate') {
+        character.mount(gateStage, 'gate', {
+            reach: { x: DOOR_X, tol: DOOR_NEAR, onReach: enterThroughDoor },
+        });
+        greet();
+    } else {
+        character.unmount();
+    }
+}
 
 const flight = new Flight({
     hall: document.querySelector('.stage--hall'),
@@ -78,6 +147,13 @@ const flight = new Flight({
 /* Mo thang bang URL (F5 giua chung, hoac gui link mot ky niem) thi khong di qua
    cu bam mo cua, ma trinh duyet lai chan moi tieng dong cho toi khi co tuong tac
    that. Nen o cac man hinh do, cham dau tien vao trang la luc nhac vao. */
+addEventListener('keydown', event => {
+    // Chi dan cho nguoi dung phim: bam phim di chuyen lan dau thi an dong huong dan
+    if (current === 'gate' && /^(Arrow(Left|Right|Up|Down)|Key[WASD])$/.test(event.code)) {
+        document.body.classList.add('gate-moved');
+    }
+});
+
 let armed = false;
 function armMusic() {
     if (armed) return;
@@ -91,7 +167,6 @@ function armMusic() {
     document.addEventListener('keydown', on);
 }
 
-let launch = null;
 let hop = 0;             // moi lan doi man hinh la mot luot; luot cu het hieu luc
 let current = null;      // man hinh dang mo, de biet dang di tien hay lui
 
@@ -126,7 +201,11 @@ function markRoute(route) {
     modes.setShown(route !== 'gate');
     // Dai ngang chi duoc phep phu man hinh khi dang o trong cac phong
     document.body.classList.toggle('in-rooms', roomOf.has(route));
+    narrator.setRoom(roomOf.has(route) ? route : null);
+    document.body.classList.toggle('at-gate', route === 'gate');
+    if (route === 'gate') document.body.classList.remove('gate-moved');
     if (roomOf.has(route)) modes.current = route;
+    seatCharacter(route);
 }
 
 /* Doi che do giua chung: dai ngang bat MOI phong hien san, con trinh chieu chi
@@ -137,6 +216,7 @@ function reshowCurrent() {
     interlude.clear();
     leaveRooms(current);
     roomOf.get(current).settle();
+    seatCharacter(current);   // doi che do thi doi cho o: trinh chieu gan vao phong, dai ngang gan vao ca dai
     if (modes.isStrip) {
         modes.scrollTo(current, { smooth: false });
         warmAround(current);
@@ -159,7 +239,7 @@ function offerTour() {
 
 /** Dat san canh sanh, khong dien lai duong bay. */
 function enterHall() {
-    clearTimeout(launch);
+    abortEntry();
     doorway.open = true;
     doorway.lock();
     flight.settle();
@@ -195,6 +275,7 @@ function restoreExplore() {
    Luot (hop) chan truong hop nguoi doc bam Back giua luc dang che. */
 function restoreChapter(folder, from) {
     const run = ++hop;
+    seatCharacter(folder);
     enterHall();     // sanh nam san phia sau, de luc quay ra khong phai tai lai
     letter.hide();
 
@@ -202,6 +283,7 @@ function restoreChapter(folder, from) {
     if (modes.isStrip) {
         interlude.clear();
         modes.scrollTo(folder, { smooth: from != null });
+        character.warp(folders.indexOf(folder));   // nhay thang toi phong do thi nhan vat cung toi
         return;
     }
 
@@ -237,7 +319,7 @@ function restoreChapter(folder, from) {
 
 function restoreGate() {
     hop++;
-    clearTimeout(launch);
+    abortEntry();
     interlude.clear();
     leaveRooms();
     flight.reset();
@@ -246,23 +328,52 @@ function restoreGate() {
 }
 
 /* ---------- TUONG TAC ---------- */
-doorway.onClick(() => {
-    const open = doorway.toggle();
+/* Bam vao cua cung nhu di toi cua: nhan vat tu di toi, cua tu mo (danh cho may
+   khong co ban phim). Khong con cach nao mo cua ma nhan vat khong buoc vao. */
+doorway.onClick(() => enterThroughDoor());
 
-    clearTimeout(launch);
-    if (!open) {
-        flight.disarm();
+/** Cua tu mo -> nhan vat buoc vao trong, nho dan -> lao vao sanh. */
+async function enterThroughDoor() {
+    if (entering) return;
+    entering = true;
+    const run = ++entryRun;
+    const alive = () => run === entryRun;
+
+    character.lock();
+    character.shutUp();   // dang noi do thi thoi, vao cua
+    flight.arm();
+    music.start();     // cu bam OK / phim di toi cua la tuong tac dau tien: du de trinh duyet cho phat
+    letter.warmup();   // con vai giay nua moi den luot khung tranh, du cho font ve
+
+    if (calm.matches) {
+        doorway.open = true;
+        await wait(TIMING.calmDoors);
+        if (alive()) takeOff();
         return;
     }
+    // Di toi truoc cua truoc, roi cua moi tu mo (cham), roi moi buoc vao
+    const atDoor = await character.walkTo({ x: DOOR_X, y: DOOR_FOOT });
+    if (!alive() || !atDoor) return;
+    doorway.open = true;
+    await wait(TIMING.doors + TIMING.doorsPause);
+    if (!alive()) return;
+    const inside = await character.walkTo(
+        { x: DOOR_X, y: DOOR_INSIDE },
+        { duration: TIMING.walkIn, shrink: 0.26, fade: true },
+    );
+    if (alive() && inside) takeOff();
+}
 
-    flight.arm();
-    music.start();     // cu bam nay la tuong tac dau tien: du de trinh duyet cho phat
-    letter.warmup();   // con ~4s nua moi den luot khung tranh, du cho font ve
-    launch = setTimeout(takeOff, calm.matches ? TIMING.calmDoors : TIMING.doors + TIMING.hold);
-});
+/** Roi man cong giua chung (Back, doi dia chi): bo dang vao cua do dang. */
+function abortEntry() {
+    entryRun++;
+    entering = false;
+    character.cancel();
+}
 
 function takeOff() {
     doorway.lock();
+    character.unmount();
     // Doi dia chi ma khong goi lai handler: chuyen canh dang chay, khong the de
     // router nhay thang den ket qua. Doi lai, F5 giua duong bay se vao ngay
     // trong sanh - dung y do.

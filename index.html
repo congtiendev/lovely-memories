@@ -44,6 +44,8 @@
     <link rel="stylesheet" href="assets/css/components/flight.css">
     <link rel="stylesheet" href="assets/css/components/letter.css">
     <link rel="stylesheet" href="assets/css/components/room.css">
+    <link rel="stylesheet" href="assets/css/components/character.css">
+    <link rel="stylesheet" href="assets/css/components/narrate.css">
     <link rel="stylesheet" href="assets/css/components/interlude.css">
     <link rel="stylesheet" href="assets/css/components/timeline.css">
     <link rel="stylesheet" href="assets/css/components/strip.css">
@@ -87,6 +89,12 @@
             <span class="seam"></span>
         </button>
     </div>
+
+    <!-- Chi dan o man cong. May co ban phim thi dung phim, may cam ung thi cham vao cua. -->
+    <p class="gate-hint" lang="vi">
+        <span class="gate-hint__keys">Dùng phím ← ↑ → ↓ hoặc W A S D để đi tới cửa</span>
+        <span class="gate-hint__touch">Chạm vào cửa để bước vào</span>
+    </p>
 
     <!-- ---------- SANH: diem den sau khi bay qua o cua ---------- -->
     <div class="stage stage--hall">
@@ -161,6 +169,15 @@
             <button class="mode__tour" type="button">Xem lại hướng dẫn</button>
         </div>
     </div>
+
+    <!-- ---------- THUYET MINH: nhan vat doc loi cua phong dang xem. Chi hien trong phong co loi. ---------- -->
+    <button class="narrate" type="button" hidden aria-pressed="false" lang="vi">
+        <svg class="narrate__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M5 4.5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-6.2L8 20.2V16.5H5a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2z"/>
+            <path class="narrate__line" d="M7.5 9h9M7.5 12h5.5"/>
+        </svg>
+        <span class="narrate__label">Thuyết minh</span>
+    </button>
 
     <!-- ---------- NHAC NEN ----------
          preload="none": ban nhac nang, chi tai khi nguoi doc bam mo cua.

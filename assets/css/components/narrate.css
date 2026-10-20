@@ -1,0 +1,73 @@
+/* ---------- NUT THUYET MINH ----------
+   Goc duoi-TRAI, doi xung voi nut loa o goc duoi-phai. Chi hien trong phong co loi
+   (JS bo thuoc tinh hidden). Cung chat lieu voi nut OK trong bong bong thoai: vien
+   vang, mat giay a, chu muc nau - cung mot bo voi tam the huong dan va khung loi nhan. */
+.narrate {
+    position: fixed;
+    left: max(2.2vmin, env(safe-area-inset-left));
+    bottom: max(2.2vmin, env(safe-area-inset-bottom));
+    z-index: 9;
+    display: none;
+    align-items: center;
+    gap: 0.55em;
+    margin: 0;
+    padding: 0.55em 1.15em 0.6em 0.95em;
+    border: 1px solid rgba(190, 150, 80, 0.95);
+    border-radius: 999px;
+    background: linear-gradient(#fff4d6, #ecd49a);
+    box-shadow:
+        inset 0 0.08em 0 rgba(255, 255, 245, 0.85),
+        inset 0 -0.14em 0.3em rgba(170, 125, 55, 0.25),
+        0 0.18rem 0.5rem rgba(30, 18, 6, 0.4);
+    font-family: 'EB Garamond', Georgia, 'Times New Roman', serif;
+    font-size-adjust: ex-height 0.44;
+    font-weight: 600;
+    font-size: clamp(0.82rem, 2vmin, 1.15rem);
+    letter-spacing: 0.1em;
+    color: rgba(88, 62, 28, 0.98);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: filter 160ms ease, translate 120ms ease;
+}
+/* Chi hien khi dang o trong phong (body.in-rooms) VA phong co loi (khong con hidden) */
+.in-rooms .narrate:not([hidden]) { display: inline-flex; }
+
+.narrate:hover { filter: brightness(1.07) saturate(1.1); }
+.narrate:active { translate: 0 0.08em; }
+.narrate:focus-visible { outline: 2px solid #c8a15a; outline-offset: 0.3em; }
+
+.narrate__icon {
+    width: 1.35em;
+    height: 1.35em;
+    fill: rgba(150, 112, 52, 0.22);
+    stroke: rgba(112, 80, 34, 0.95);
+    stroke-width: 1.6;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+}
+.narrate__line { fill: none; }
+
+/* Dang doc: nut sang len va thoi "tho" nhe de biet dang noi */
+.narrate.is-playing {
+    background: linear-gradient(#ffe9b0, #e6c273);
+    animation: narratePulse 2.2s ease-in-out infinite;
+}
+@keyframes narratePulse {
+    0%, 100% { box-shadow: inset 0 0.08em 0 rgba(255, 255, 245, 0.85),
+                           inset 0 -0.14em 0.3em rgba(170, 125, 55, 0.25),
+                           0 0.18rem 0.5rem rgba(30, 18, 6, 0.4),
+                           0 0 0 0 rgba(255, 214, 132, 0.55); }
+    50%      { box-shadow: inset 0 0.08em 0 rgba(255, 255, 245, 0.85),
+                           inset 0 -0.14em 0.3em rgba(170, 125, 55, 0.25),
+                           0 0.18rem 0.5rem rgba(30, 18, 6, 0.4),
+                           0 0 0 0.5em rgba(255, 214, 132, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .narrate.is-playing { animation: none; }
+}
+
+/* Dien thoai ngang: man chi cao ~375px, nut nho lai de khong che nhan vat va phan san */
+@media (max-height: 500px) {
+    .narrate { padding: 0.42em 0.9em 0.46em 0.75em; font-size: 0.78rem; }
+}

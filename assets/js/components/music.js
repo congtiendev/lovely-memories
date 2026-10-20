@@ -4,6 +4,7 @@
    ghi chu trong assets/audios/), nen o day cu mo het co. The <audio> van de
    preload="none": chi tai khi den luc phat, khong lam nang luc mo trang. */
 const FADE = 2600;        // vao nhe dan cho khop nhip cua dang mo
+const DUCK = 0.16;        // am luong nhac nen khi co loi thuyet minh (khong bat duoc tren iOS: xem duck())
 const LEVEL = 1;          // het co - ban nhac da duoc chuan hoa sat tran khi cat
 
 /* Safari iOS khong cho dat `volume` cua <audio> (luon doc ra 1, ghi bi bo qua),
@@ -65,10 +66,10 @@ export class Music {
 
     /* Vao/ra bang dong ho chu khong bang transition: `volume` khong phai thuoc
        tinh CSS nen khong co transition nao chay duoc cho no. */
-    #fadeTo(target) {
+    #fadeTo(target, ms = FADE) {
         clearInterval(this.#fade);
         if (!this.#canFade) return;   // iOS: am luong co dinh, nhac vao het co ngay
-        const step = (target - this.#audio.volume) / (FADE / 50);
+        const step = (target - this.#audio.volume) / (ms / 50);
         this.#fade = setInterval(() => {
             const v = this.#audio.volume + step;
             if ((step > 0 && v >= target) || (step < 0 && v <= target)) {
@@ -78,6 +79,22 @@ export class Music {
             }
             this.#audio.volume = Math.min(1, Math.max(0, v));
         }, 50);
+    }
+
+    /**
+     * Ha nhac nen cho loi thuyet minh nghe ro (on = true), tra lai khi xong (on = false).
+     * iOS khong cho dat am luong nen o do tam dung han nhac nen trong luc doc.
+     */
+    duck(on) {
+        if (!this.#wanted) return;
+        if (this.#canFade) {
+            this.#fadeTo(on ? DUCK : LEVEL, 700);
+        } else if (on) {
+            this.#audio.pause();
+        } else {
+            const p = this.#audio.play();
+            if (p && p.catch) p.catch(() => {});
+        }
     }
 
     #sync() {

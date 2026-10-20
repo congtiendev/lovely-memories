@@ -165,6 +165,7 @@
     left: 50%;
     bottom: 5.5%;
     translate: -50% 0;
+    z-index: 20;   /* tren nhan vat (z-index 1-11): dang di qua van bam duoc */
     margin: 0;
     padding: 0.7em 1.4em;
     border: 0;
