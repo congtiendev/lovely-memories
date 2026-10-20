@@ -1,6 +1,10 @@
 * { box-sizing: border-box; }
 
 html, body {
+    /* Cham hai lan nhanh khong phong to trang (iOS Safari van lam du da khoa
+       viewport), va bo do tre 300ms khi cham. */
+    touch-action: manipulation;
+    -webkit-text-size-adjust: 100%;   /* xoay ngang iPhone khong tu phong chu */
     height: 100%;
     margin: 0;
     overflow: hidden;

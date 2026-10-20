@@ -12,6 +12,14 @@
    trang xin xoay ngang; may nao khong cho khoa huong thi hien loi nhac xoay tay. */
 const KEY = 'lovely-memories:mode';   // khoa cu, chi de don di
 
+/* Hang so thoi gian (ms) cua truot mem: dai di toi dich theo ham mu, sau 3 lan
+   tau la xong 95% quang duong. Lan chuot can bam sat tay; tha tay sau khi keo
+   thi troi xa hon nhu day mot tam tranh tren ray. */
+const WHEEL_TAU = 110;
+const FLING_TAU = 325;
+const FLING_MAX = 4;          // px/ms - vung qua manh cung khong vang qua vai phong
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+
 export class Modes {
     #root;
     #button;
@@ -79,6 +87,11 @@ export class Modes {
     #element;
     #settle = null;
     #current = null;
+    #raf = 0;
+    #pos = 0;        // vi tri dang ve, so thuc - scrollLeft doc lai bi lam tron
+    #target = 0;
+    #tau = WHEEL_TAU;
+    #tick = 0;
 
     /** Chuong dang xem - de luc doi che do con biet dua ai ve giua. */
     set current(folder) { this.#current = folder; }
@@ -135,6 +148,8 @@ export class Modes {
     #enableDrag() {
         const el = this.#rooms;
         let startX = 0, startLeft = 0, dragging = false, moved = 0;
+        // Vai mau (thoi diem, x) cuoi cung de tinh van toc luc tha tay
+        let trail = [];
 
         el.addEventListener('pointerdown', event => {
             // CHI keo trong che do cuon ngang. Truoc day khong xet, nen o che do
@@ -143,9 +158,12 @@ export class Modes {
             // thuc keo nuot luon cu click do -> bam "TIEP" khong an gi.
             if (!this.isStrip) return;
             if (event.pointerType === 'touch' || event.button !== 0) return;
+            // Dang troi thi cham vao la dung lai, nhu chan tay len tam tranh
+            this.#stopGlide();
             dragging = true; moved = 0;
             startX = event.clientX;
             startLeft = el.scrollLeft;
+            trail = [{ t: event.timeStamp, x: event.clientX }];
             // Bat/nha con tro co the nem loi (con tro tong hop, hoac da bi nha
             // truoc do). De no nem thi ca doan ket thuc keo bi bo dở va dai
             // khong truot ve dung phong nua.
@@ -157,12 +175,23 @@ export class Modes {
             moved = Math.max(moved, Math.abs(dx));
             if (moved > 5) el.classList.add('is-dragging');
             el.scrollLeft = startLeft - dx;
+            trail.push({ t: event.timeStamp, x: event.clientX });
+            while (trail.length > 2 && event.timeStamp - trail[0].t > 100) trail.shift();
         });
         const end = event => {
             if (!dragging) return;
             dragging = false;
             el.classList.remove('is-dragging');
             try { el.releasePointerCapture?.(event.pointerId); } catch { /* khong sao */ }
+            // Tha tay ma dai dung sung lai la cam giac khung nhat. Lay van toc
+            // trong ~100ms cuoi roi cho dai troi tiep va cham dan. Dung tay mot
+            // nhip roi moi tha (mau cuoi da cu) thi khong troi.
+            const first = trail[0], last = trail[trail.length - 1];
+            const span = last.t - first.t;
+            if (moved > 5 && span > 0 && event.timeStamp - last.t < 60) {
+                const v = Math.max(-FLING_MAX, Math.min(FLING_MAX, (first.x - last.x) / span));
+                this.#glideTo(el.scrollLeft + v * FLING_TAU, FLING_TAU);
+            }
             if (moved > 5) {
                 const eat = e => { e.stopPropagation(); e.preventDefault(); };
                 el.addEventListener('click', eat, { capture: true, once: true });
@@ -177,16 +206,65 @@ export class Modes {
        khong tu doi truc, nen phai doi tay. Trackpad vuot ngang thi da co
        deltaX san, cu lay cai nao lon hon.
        Lan/keo toi dau thi dung o do: khong snap, khong tu truot ve mot phong -
-       tu keo nguoc lai nhu vay lam nguoi xem mat quyen dieu khien khung hinh. */
+       tu keo nguoc lai nhu vay lam nguoi xem mat quyen dieu khien khung hinh.
+
+       Truoc day moi nac chuot cong thang ~100px vao scrollLeft: dai nhay cuc
+       tung buoc. Gio moi nac chi doi DICH, dai truot mem toi do; lan lien tiep
+       thi dich cong don nen van theo kip tay. */
     #enableWheel() {
         this.#rooms.addEventListener('wheel', event => {
-            if (!this.isStrip) return;
-            const step = Math.abs(event.deltaY) > Math.abs(event.deltaX)
-                ? event.deltaY : event.deltaX;
-            if (!step) return;
+            if (!this.isStrip || event.ctrlKey) return;   // ctrl = phong to trang
+            // Trackpad vuot NGANG: trinh duyet tu cuon dung truc va co san quan
+            // tinh muot hon moi thu tu viet - de nguyen cho no.
+            if (Math.abs(event.deltaX) >= Math.abs(event.deltaY)) {
+                this.#stopGlide();
+                return;
+            }
             event.preventDefault();
-            this.#rooms.scrollLeft += step;
+            // Firefox co the bao theo DONG (deltaMode 1) hay theo TRANG (2):
+            // khong doi ra px thi mot nac chuot chi di duoc 3px
+            const unit = [1, 40, this.#rooms.clientWidth][event.deltaMode] ?? 1;
+            const from = this.#raf ? this.#target : this.#rooms.scrollLeft;
+            this.#glideTo(from + event.deltaY * unit, WHEEL_TAU);
         }, { passive: false });
+    }
+
+    /* ---------- TRUOT MEM ----------
+       Mot vong rAF duy nhat cho ca lan chuot lan quan tinh sau khi keo: moi
+       khung hinh di mot phan quang duong con lai, tinh theo thoi gian that
+       (khong theo so khung) nen man 60Hz hay 144Hz deu troi nhu nhau. */
+    #glideTo(target, tau) {
+        const el = this.#rooms;
+        const max = el.scrollWidth - el.clientWidth;
+        if (!this.#raf) this.#pos = el.scrollLeft;
+        this.#target = Math.max(0, Math.min(max, target));
+        this.#tau = tau;
+        if (reducedMotion.matches) {
+            this.#stopGlide();
+            el.scrollLeft = this.#target;
+            return;
+        }
+        if (this.#raf) return;
+        this.#tick = performance.now();
+        const frame = now => {
+            // timestamp cua rAF co the som hon performance.now() vua lay
+            const dt = Math.max(0, Math.min(now - this.#tick, 64));
+            this.#tick = now;
+            this.#pos += (this.#target - this.#pos) * (1 - Math.exp(-dt / this.#tau));
+            if (Math.abs(this.#target - this.#pos) < 0.5) {
+                el.scrollLeft = this.#target;
+                this.#raf = 0;
+                return;
+            }
+            el.scrollLeft = this.#pos;
+            this.#raf = requestAnimationFrame(frame);
+        };
+        this.#raf = requestAnimationFrame(frame);
+    }
+
+    #stopGlide() {
+        cancelAnimationFrame(this.#raf);
+        this.#raf = 0;
     }
 
     /** Dua mot ky niem ve giua dai. */
@@ -194,6 +272,7 @@ export class Modes {
         const i = this.#folders.indexOf(folder);
         const el = this.#rooms.children[i];
         if (!el) return;
+        this.#stopGlide();   // khong thi vong rAF va cuon cua trinh duyet giang co nhau
         this.#rooms.scrollTo({
             left: el.offsetLeft + el.offsetWidth / 2 - this.#rooms.clientWidth / 2,
             behavior: smooth ? 'smooth' : 'auto',
