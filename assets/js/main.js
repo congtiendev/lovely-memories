@@ -55,6 +55,7 @@ const modes = new Modes({
             current = folder;
             router.go(folder, { silent: true });
             timeline.mark(folder);
+            warmAround(folder);
         }
     },
     onChange: () => reshowCurrent(),
@@ -136,7 +137,18 @@ function reshowCurrent() {
     interlude.clear();
     leaveRooms(current);
     roomOf.get(current).settle();
-    if (modes.isStrip) modes.scrollTo(current, { smooth: false });
+    if (modes.isStrip) {
+        modes.scrollTo(current, { smooth: false });
+        warmAround(current);
+    }
+}
+
+/* Dai ngang: giai ma san anh nen hai phong ke ben. Khong lam thi trinh duyet
+   chi giai ma luc phong vua lo vao man hinh - dung giua luc dang truot, va do
+   chinh la cu khung hinh thay ro nhat. */
+function warmAround(folder) {
+    const i = folders.indexOf(folder);
+    for (const f of [folders[i - 1], folders[i + 1]]) roomOf.get(f)?.warmup();
 }
 
 /* Cho canh phong hien va tranh treo xong roi moi soi den: soi vao mot buc tranh
