@@ -9,6 +9,8 @@ export class Room {
     #viewer;
     #viewerImg;
     #next;
+    #prev;
+    #invite;
     #decoding = null;
 
     constructor({ element }) {
@@ -17,8 +19,11 @@ export class Room {
         this.#viewer = element.querySelector('.room__viewer');
         this.#viewerImg = this.#viewer?.querySelector('img');
         this.#next = element.querySelector('.room__next');
+        this.#prev = element.querySelector('.room__prev');
+        this.#invite = element.querySelector('.room__invite');
 
-        for (const art of element.querySelectorAll('.room__art')) {
+        // To thu moi cung la .room__art (de nhan cho treo) nhung khong mo lop xem tranh
+        for (const art of element.querySelectorAll('.room__art:not(.room__invite)')) {
             art.addEventListener('click', event => {
                 event.stopPropagation();   // dung de noi len .room thanh lenh lui ra
                 this.#view(art);
@@ -28,9 +33,11 @@ export class Room {
             event.stopPropagation();
             this.closeArt();
         });
-        this.#next?.addEventListener('click', event => {
-            event.stopPropagation();
-        });
+        for (const button of [this.#next, this.#prev, this.#invite]) {
+            button?.addEventListener('click', event => {
+                event.stopPropagation();
+            });
+        }
         addEventListener('keydown', event => {
             if (event.key === 'Escape') this.closeArt();
         });
@@ -79,6 +86,21 @@ export class Room {
     /** Nut di tiep sang chuong sau (phong cuoi thi khong co nut nay). */
     onNext(handler) {
         this.#next?.addEventListener('click', handler);
+    }
+
+    /** Nut quay lai chuong truoc (phong dau thi khong co nut nay). */
+    onPrev(handler) {
+        this.#prev?.addEventListener('click', handler);
+    }
+
+    /** Bam vao to thu moi treo tren tuong (phong co thu moi). */
+    onInvite(handler) {
+        this.#invite?.addEventListener('click', handler);
+    }
+
+    /** Thu da roi xuong va doc mot lan: treo to thu len tuong de bam vao xem lai. */
+    markInvited() {
+        this.#element.classList.add('is-invited');
     }
 
     /** Ban lon chi tai o day, khong tai san cho buc tren tuong. Cho giai ma

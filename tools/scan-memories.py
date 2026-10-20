@@ -9,6 +9,12 @@ Quy uoc ten file trong moi thu muc:
     memory-<w>w.webp           canh phong, ban cat ngang
     memory-portrait-<w>w.webp  canh phong, ban cat doc
     art-NN-<w>w.webp           tranh treo tuong (ban rong nhat dung cho lop xem)
+    thu-moi.json               la thu moi: phong khong can tranh; thuyet minh xong thi thu
+                               roi xuong va but viet (components/invite.js). Noi dung:
+                               { "lines": [{ "text": "...", "style": "..." }] }
+                               style: date (noi, ngay viet - sat le phai) | title (giua) |
+                               greet | more (viet tiep dong tren, thut vao) | sign (ky ten)
+                               | bo trong la dong thuong.
 
 Thu muc khong co anh canh thi muon canh, CHON THEO SO TRANH (xem
 SCENE_BY_ARTS). Gia tri co the la:
@@ -18,12 +24,13 @@ SCENE_BY_ARTS). Gia tri co the la:
 Nen chung deu la tuong PHANG nen treo bao nhieu buc cung duoc; canh co san hoc
 tuong / o tuong thi phai co bo toa do rieng cho tung so luong.
 
-Thu muc rong (khong tranh, khong canh) bi bo qua - de san cho nhung ngay chua co
+Thu muc rong (khong tranh, khong canh, khong thu moi) bi bo qua - de san cho nhung ngay chua co
 anh ma khong lam ban dong thoi gian.
 
 Trang tinh khong the tu liet ke thu muc luc chay (GitHub Pages khong cho index),
 nen danh sach phai duoc chot san o day thay vi do tim tu trinh duyet.
 """
+import json
 import re
 from pathlib import Path
 
@@ -115,14 +122,17 @@ def main():
     for folder in folders:
         g = groups[folder.name]
         arts = [(name, items) for name, items in sorted(g.items()) if name.startswith('art-')]
+        invite = folder / 'thu-moi.json'
+        letter = json.loads(invite.read_text(encoding='utf-8')) if invite.is_file() else None
         scene = scenes.get(folder.name)
         if not scene:
-            if not arts:
+            if not arts and not letter:
                 skipped.append(folder.name)   # thu muc rong: chua den luot
                 continue
-            name = SCENE_BY_ARTS.get(len(arts), SCENE_FALLBACK)
+            # Phong chi co thu moi: to thu treo o giua tuong, nhu MOT buc tranh
+            name = SCENE_BY_ARTS.get(len(arts) + (1 if letter else 0), SCENE_FALLBACK)
             scene = shared.get(name)
-        chapters.append({'folder': folder.name, 'scene': scene, 'arts': arts})
+        chapters.append({'folder': folder.name, 'scene': scene, 'arts': arts, 'letter': letter})
 
     lines = ["/* FILE NAY DUOC SINH RA TU thu muc memories/ - dung sua tay.",
              "   Chay lai sau khi them ky niem:  python3 tools/scan-memories.py */",
@@ -158,6 +168,8 @@ def main():
             lines.append(f"              full: 'memories/{ch['folder']}/{items[-1][1]}',")
             lines.append(f"              width: {w}, height: {h} }},")
         lines.append(f"        ],")
+        if ch['letter']:
+            lines.append(f"        letter: {json.dumps(ch['letter'], ensure_ascii=False)},")
         lines.append(f"    }},")
     lines.append("];")
     OUT.write_text('\n'.join(lines) + '\n', encoding='utf-8')
@@ -165,7 +177,8 @@ def main():
     for ch in chapters:
         sc = ch['scene']
         note = f" -> {sc['folder']}" if sc else ' (CHUA CO PHONG)'
-        print(f"   {ch['folder']}: {len(ch['arts'])} tranh{note}")
+        extra = ' + thu moi' if ch['letter'] else ''
+        print(f"   {ch['folder']}: {len(ch['arts'])} tranh{extra}{note}")
     if skipped:
         print(f'   bo qua {len(skipped)} thu muc rong: {", ".join(skipped)}')
 

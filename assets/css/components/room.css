@@ -160,11 +160,13 @@
    moi ban cat anh, khong can bo toa do rieng.
    San nha moi phong mot mau (da o phong nay, go o phong sau) nen chu phai tu
    mang bong rieng de doc duoc tren ca hai. */
-.room__next {
+.room__next,
+.room__prev {
     position: absolute;
     left: 50%;
-    bottom: 5.5%;
+    bottom: 2%;   /* tren san go, thang hang voi nut "Thuyet minh" va nut am thanh; o chan tuong thi chu sang kho doc */
     translate: -50% 0;
+    z-index: 20;   /* tren nhan vat (z-index 1-11): dang di qua van bam duoc */
     margin: 0;
     padding: 0.7em 1.4em;
     border: 0;
@@ -189,7 +191,8 @@
     transition: opacity 700ms ease, color 220ms ease, transform 140ms ease;
     -webkit-tap-highlight-color: transparent;
 }
-.room.is-open .room__next {
+.room.is-open .room__next,
+.room.is-open .room__prev {
     opacity: 1;
     transition-delay: 900ms;   /* sau khi tranh da treo xong */
     animation: nextGlow 3s ease-in-out 1.6s infinite;
@@ -202,9 +205,28 @@
                             0 0.05em 0.12em rgba(18, 11, 5, 0.9),
                             0 0 1.7em rgba(255, 216, 152, 0.8); }
 }
-.room__next:hover { color: #fff8e8; }
-.room__next:active { transform: translateY(0.08em); }
-.room__next:focus-visible { outline: 2px solid #e8c98a; outline-offset: 0.3em; border-radius: 999px; }
+/* Co ca hai nut: "Truoc" va "Tiep" tua vao hai ben diem giua (moi nut tu mang padding nen
+   hai chu cach nhau dung bang hai le), ngan boi mot vach mong. Chi co mot nut thi nam giua.
+   Nhan ra bang vi tri trong canh ("Truoc" dung ngay truoc "Tiep"; khong co "Tiep" thi "Truoc"
+   la <button> cuoi cung - nhan vat la <div> nen chen vao canh cung khong sao) chu khong bang
+   class tu JS: JS cu con trong cache cung khong lam hai nut dinh nhau. */
+.room__prev { translate: -100% 0; }
+.room__prev:last-of-type { translate: -50% 0; }
+.room__prev + .room__next { translate: 0 0; }
+.room__prev:not(:last-of-type)::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 28%;
+    bottom: 28%;
+    width: 1px;
+    background: rgba(248, 238, 217, 0.5);
+    box-shadow: 0 0 0.4em rgba(24, 15, 6, 0.9);
+}
+.room__next:hover, .room__prev:hover { color: #fff8e8; }
+.room__next:active, .room__prev:active { transform: translateY(0.08em); }
+.room__next:focus-visible,
+.room__prev:focus-visible { outline: 2px solid #e8c98a; outline-offset: 0.3em; border-radius: 999px; }
 
 /* ---------- LOP XEM TRANH ----------
    Bam vao tranh thi mo o day, khong phong to buc tren tuong: nho vay tranh
@@ -252,10 +274,11 @@
     .room, .room.is-open { transition: none; }
     .room__scene { scale: 1; transition: none; }
     /* Hien ngay, khong ha xuong va khong cho lan luot */
-    .room__art, .room__date, .room__next { transform: none; transition: none; }
+    .room__art, .room__date, .room__next, .room__prev { transform: none; transition: none; }
     .room.is-open .room__art,
     .room.is-open .room__date,
-    .room.is-open .room__next { transition-delay: 0s; animation: none; }
+    .room.is-open .room__next,
+    .room.is-open .room__prev { transition-delay: 0s; animation: none; }
     .room__viewer, .room__viewer img { transition: none; }
     .room__viewer img { transform: none; }
 }

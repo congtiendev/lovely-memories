@@ -3,10 +3,9 @@
      'show'  trinh chieu - moi luc mot phong, bam "Tiep" de sang chuong sau
      'strip' cuon ngang  - noi lien tuong cac phong thanh mot dai, vuot sang ben
 
-   Mo trang lan nao cung bat dau o TRINH CHIEU: do la cach xem chinh, con cuon
-   ngang la mot loi choi them - nho lai lua chon cu se lam nguoi mo link roi
-   thang vao mot dai anh ma khong hieu chuyen gi. Doi che do chi co hieu luc
-   trong phien dang xem.
+   Mo trang lan nao cung bat dau o CUON NGANG (mac dinh) - tru man doc, noi dai
+   ngang khong dung duoc nen mo bang trinh chieu. Khong nho lua chon cu: doi che
+   do chi co hieu luc trong phien dang xem.
 
    Dai ngang luon dung ban cat NGANG cua anh nen, nen tren dien thoai dung thi
    trang xin xoay ngang; may nao khong cho khoa huong thi hien loi nhac xoay tay. */
@@ -26,15 +25,21 @@ export class Modes {
     #label;
     #rooms;
     #hint;
-    #mode = 'show';
+    #mode = 'strip';
     #onScrollTo;
     #onChange;
     #onTour;
     #folders = [];
 
-    constructor({ element, rooms, hint, folders, root = document.body,
+    /**
+     * @param getCurrent tra ve chuong dang xem. Hoi luc can chu khong giu ban sao: ban sao
+     *        tung bi cu (bam "Tiep", cuon sang phong khac) nen doi sang dai ngang keo ve
+     *        phong cu, con nhan vat thi dung o phong moi.
+     */
+    constructor({ element, rooms, hint, folders, root = document.body, getCurrent = () => null,
                   onScrollTo = () => {}, onChange = () => {}, onTour = () => {} }) {
         this.#root = root;
+        this.#getCurrent = getCurrent;
         this.#button = element.querySelector('.mode__btn');
         this.#label = element.querySelector('.mode__label');
         this.#element = element;
@@ -81,20 +86,17 @@ export class Modes {
         // Don not lua chon da luu tu ban truoc, khong thi may nao tung chon cuon
         // ngang se mai mai con lai mot khoa mo trong localStorage
         try { localStorage.removeItem(KEY); } catch { /* trinh duyet chan: khong sao */ }
-        this.set('show', { silent: true });
+        this.set(innerHeight > innerWidth ? 'show' : 'strip', { silent: true });
     }
 
     #element;
     #settle = null;
-    #current = null;
+    #getCurrent;
     #raf = 0;
     #pos = 0;        // vi tri dang ve, so thuc - scrollLeft doc lai bi lam tron
     #target = 0;
     #tau = WHEEL_TAU;
     #tick = 0;
-
-    /** Chuong dang xem - de luc doi che do con biet dua ai ve giua. */
-    set current(folder) { this.#current = folder; }
 
     get mode() { return this.#mode; }
     get isStrip() { return this.#mode === 'strip'; }
@@ -136,8 +138,11 @@ export class Modes {
         // Doi sang dai ngang thi dua dung chuong dang xem ve giua man hinh.
         // Cho mot nhip: luc nay class vua duoc gan, cac o phong chua co kich
         // thuoc that nen scrollTo se tinh sai.
-        if (mode === 'strip' && this.#current) {
-            setTimeout(() => this.scrollTo(this.#current, { smooth: false }), 60);
+        if (mode === 'strip') {
+            setTimeout(() => {
+                const folder = this.#getCurrent();
+                if (folder) this.scrollTo(folder, { smooth: false });
+            }, 60);
         }
     }
 
@@ -158,6 +163,9 @@ export class Modes {
             // thuc keo nuot luon cu click do -> bam "TIEP" khong an gi.
             if (!this.isStrip) return;
             if (event.pointerType === 'touch' || event.button !== 0) return;
+            // Nhan vao nut (vd "Tiep"): bat con tro o day se doi huong cu click sang khung
+            // cuon, nut khong nhan duoc gi
+            if (event.target.closest?.('button')) return;
             // Dang troi thi cham vao la dung lai, nhu chan tay len tam tranh
             this.#stopGlide();
             dragging = true; moved = 0;
@@ -265,6 +273,11 @@ export class Modes {
     #stopGlide() {
         cancelAnimationFrame(this.#raf);
         this.#raf = 0;
+    }
+
+    /** Dung truot mem / quan tinh: co ben khac (nhan vat) sap cam lai thanh cuon. */
+    freeze() {
+        this.#stopGlide();
     }
 
     /** Dua mot ky niem ve giua dai. */

@@ -149,6 +149,28 @@ Hai cai bay o day, deu da co comment trong `components/timeline.css`:
   `auto` thi thu tu ve phu thuoc cach compositor xu ly `filter` cua bang, do lai
   10 lan thi 3 lan bang bi lop nen phu.
 
+## Nhan vat
+
+Nhan vat di lai bang phim mui ten / WASD (`js/components/character.js`, anh webp
+trong `assets/images/character/`, nguon la bo asset `Game_character_asset_pack`).
+
+- **Cong:** di toi gan cua thi cua tu mo, nhan vat tu buoc vao trong, nho dan roi
+  moi lao vao sanh. Bam vao cua cung duoc (may khong co ban phim): nhan vat tu
+  di toi cua roi vao. Cua o `DOOR_X` trong `main.js`, phai khop `--door-l` +
+  `--door-w` / 2 trong `tokens.css`.
+- **Phong:** di tren san, vi tri giu nguyen khi sang phong khac.
+- Dai san di duoc la `PROFILES` trong `character.js`, do tren anh nen (cong:
+  chan cua o 94.6%). Doi anh nen la phai do lai.
+- Dung lai thi quay ve phia nguoi xem va tiep tuc `present_talk`, dung theo
+  `animations.json` cua bo asset.
+- **Thuyet minh:** nut o goc duoi-trai, chi hien o phong co loi (`NARRATION` trong
+  `content.js`, khoa la ten thu muc ky niem). Bam thi nhan vat noi trong bong bong thoai,
+  tung cau mot; neu phong co `audio` (file mp3 de trong thu muc ky niem, vd
+  `memories/17-03-2026/thuyet-minh.mp3`) thi phat loi long tieng, ha nhac nen va go chu
+  khop do dai file (thoi gian moi cau chia theo so chu, vi file khong co moc tung cau).
+- Moi frame cat chung mot khung (30,80)-(482,768) tren canvas 512x768 goc roi
+  thu ve 300x457, de chan va dau khong lech giua cac frame.
+
 ## Cau truc
 
 ```
@@ -173,6 +195,7 @@ assets/js/
   components/interlude.js   che man de doi canh, kiem man cho tai anh
   components/timeline.js    dung cac dong tu CHAPTERS, danh dau chuong dang xem
   components/typewriter.js  go chu tung ky tu
+  components/character.js   nhan vat di lai bang phim, buoc vao cua o cong
   main.js                 gan ket cac phan
 ```
 

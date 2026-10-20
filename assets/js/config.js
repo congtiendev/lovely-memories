@@ -1,9 +1,12 @@
-/* Nhip do phai khop voi CSS: doors = --dur (1200ms) + tre cua canh phai (80ms),
+/* Nhip do phai khop voi CSS: doors = --dur (2800ms) + tre cua canh phai (80ms),
+   (Cua mo cham tren muc dich - nhan vat doi cua mo het roi moi buoc vao.)
    arriveDelay / arrive = delay va thoi luong cua keyframes `arrive`,
    drop = thoi luong keyframes `drop` cua khung tranh. */
 export const TIMING = {
-    doors: 1280,          // hai canh xoay xong
+    doors: 2880,          // hai canh xoay xong
+    doorsPause: 450,      // cua mo het, dung ngam mot nhip roi nhan vat moi buoc vao
     hold: 1500,           // dung lai ngam truoc khi lao vao
+    walkIn: 2300,         // nhan vat buoc vao trong cua va nho dan
     arriveDelay: 980,
     arrive: 2400,
     decodeBudget: 600,    // toi da cho anh giai ma; anh loi thi van phai dien tiep
@@ -26,6 +29,18 @@ export const TYPING = {
     comma: 100,           // , ; :
     period: 240,          // . ! ? — …
     paragraph: 520,
+};
+
+/* Loi nhan vat noi trong bong bong thoai (components/bubble.js). */
+export const SPEECH = {
+    startDelay: 0,        // vao cong la noi ngay (F5 cung vay), khong cho
+    thinking: 350,        // ba dau cham "dang go" truoc khi chu hien ra
+    char: 34,
+    comma: 170,           // , ; :
+    period: 340,          // . ! ? …
+    holdBase: 1600,       // sau khi go xong con giu bong bong de doc: base + perChar * so chu
+    holdPerChar: 14,
+    leave: 260,           // khop thoi luong animation thu lai trong character.css
 };
 
 export const calm = matchMedia('(prefers-reduced-motion: reduce)');
