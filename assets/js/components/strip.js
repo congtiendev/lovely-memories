@@ -3,12 +3,13 @@
      'show'  trinh chieu - moi luc mot phong, bam "Tiep" de sang chuong sau
      'strip' cuon ngang  - noi lien tuong cac phong thanh mot dai, vuot sang ben
 
-   Mo trang lan nao cung bat dau o CUON NGANG (mac dinh) - tru man doc, noi dai
-   ngang khong dung duoc nen mo bang trinh chieu. Khong nho lua chon cu: doi che
-   do chi co hieu luc trong phien dang xem.
+   Mo trang lan nao cung bat dau o CUON NGANG (mac dinh), ke ca man doc. Khong nho
+   lua chon cu: doi che do chi co hieu luc trong phien dang xem.
 
    Dai ngang luon dung ban cat NGANG cua anh nen, nen tren dien thoai dung thi
    trang xin xoay ngang; may nao khong cho khoa huong thi hien loi nhac xoay tay. */
+import { ROTATED, tell } from './rotated.js';
+
 const KEY = 'lovely-memories:mode';   // khoa cu, chi de don di
 
 /* Hang so thoi gian (ms) cua truot mem: dai di toi dich theo ham mu, sau 3 lan
@@ -87,7 +88,9 @@ export class Modes {
         // Don not lua chon da luu tu ban truoc, khong thi may nao tung chon cuon
         // ngang se mai mai con lai mot khoa mo trong localStorage
         try { localStorage.removeItem(KEY); } catch { /* trinh duyet chan: khong sao */ }
-        this.set(innerHeight > innerWidth ? 'show' : 'strip', { silent: true });
+        // Luon mo bang CUON NGANG, ke ca man doc (dien thoai cam doc): nut xoay man hinh o goc phai
+        // nhac xoay ngang, nhung dai van xem duoc luon. Doi sang trinh chieu la viec cua nguoi xem.
+        this.set('strip', { silent: true });
     }
 
     #element;
@@ -307,7 +310,11 @@ export class Modes {
     /* Nut xoay man hinh. Trinh duyet chi cho khoa huong khi dang toan man hinh va khong phai may
        nao cung cho (iPhone khong co); khong duoc thi nhac nguoi xem tu xoay. Phai goi tu cu bam. */
     async #rotate() {
-        const button = document.querySelector('.rotate-btn');
+        // Dang chay trong khung xoay (rotate.html): nut nay la "quay lai man hinh doc"
+        if (ROTATED) {
+            tell({ type: 'exit', hash: location.hash });
+            return;
+        }
         try {
             if (!screen.orientation?.lock) throw new Error('no-lock');
             if (!document.fullscreenElement) await document.documentElement.requestFullscreen?.();
@@ -315,12 +322,10 @@ export class Modes {
             this.#locked = true;
             this.#checkOrientation();
         } catch {
-            const tip = button?.querySelector('.rotate-btn__tip');
-            if (!tip) return;
-            tip.textContent = 'Máy này không cho khoá hướng, bạn xoay ngang máy bằng tay nhé';
-            button.classList.remove('is-asking');
-            void button.offsetWidth;   // cho animation chay lai tu dau
-            button.classList.add('is-asking');
+            // Khong khoa duoc huong (iPhone / safari khong co API nay, hoac may khong cho): xoay bang CSS.
+            // rotate.html chay lai trang trong mot khung xoay 90 do - xem file do.
+            try { document.exitFullscreen?.(); } catch { /* khong sao */ }
+            location.href = 'rotate.html?r=' + encodeURIComponent(location.hash);
         }
     }
 

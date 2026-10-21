@@ -14,6 +14,7 @@ import { Modes } from './components/strip.js';
 import { Music } from './components/music.js';
 import { Volume } from './components/volume.js';
 import { MoveHint } from './components/move-hint.js';
+import { initRotated } from './components/rotated.js';
 import { Tour } from './components/tour.js';
 import { Character } from './components/character.js';
 import { BootMeter } from './components/boot.js';
@@ -68,6 +69,8 @@ const modes = new Modes({
     onChange: () => reshowCurrent(),
     onTour: () => tour.start(),
 });
+/* Chay trong khung xoay cua iPhone (rotate.html): vuot bang tay, nut quay lai, bao dia chi cho trang khung */
+initRotated({ modes });
 
 /* Gian phong khong co menu, khong co chu huong dan nao san tren man hinh - lan
    dau vao phong thi phai co ai do chi cho biet bam vao dau. Chi chay mot lan;

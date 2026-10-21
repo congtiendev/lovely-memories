@@ -55,6 +55,7 @@
    Dung thuoc tinh `translate` de danh rieng `transform` cho luc phong to.
    Toa do o tokens.css, moi ban cat anh mot bo. */
 .room__art {
+    --soft: 0.12px;   /* lam mem anh cho khop do net cua anh phong; xem @media (hover: none) o duoi */
     position: absolute;
     left: var(--art-cx);
     top: var(--art-cy);
@@ -88,7 +89,7 @@
         brightness(1.02)
         saturate(0.88)
         sepia(0.12)
-        blur(0.12px)
+        blur(var(--soft, 0.12px))
         drop-shadow(0 0.35vmin 0.7vmin rgba(28, 18, 8, 0.5));
     /* Treo len: hien dan va ha nhe xuong dung cho */
     opacity: 0;
@@ -243,8 +244,9 @@
        den). Nho vay lop nen la mot lop toi CUNG TONG voi canh, khong phai mot
        tam den lac ra khoi bang mau. Them lam mo hau canh cho ra chieu sau. */
     background: rgba(71, 62, 51, 0.86);
-    backdrop-filter: blur(8px) saturate(0.92);
-    -webkit-backdrop-filter: blur(8px) saturate(0.92);
+    /* KHONG dat backdrop-filter o day: o che do cuon ngang moi phong deu co mot lop xem tranh phu kin
+       man hinh, safari iOS van ve lam mo lop duoi du lop nay dang opacity 0 / visibility hidden - nen
+       tranh trong phong bi mo che phu. Lam mo chi gan khi dang mo that (.art-open ben duoi). */
     opacity: 0;
     visibility: hidden;
     cursor: zoom-out;
@@ -265,6 +267,8 @@
 .room.art-open .room__viewer {
     opacity: 1;
     visibility: visible;
+    backdrop-filter: blur(8px) saturate(0.92);
+    -webkit-backdrop-filter: blur(8px) saturate(0.92);
     transition: opacity 420ms ease;
 }
 .room.art-open .room__viewer img { transform: none; }
@@ -281,4 +285,10 @@
     .room.is-open .room__prev { transition-delay: 0s; animation: none; }
     .room__viewer, .room__viewer img { transition: none; }
     .room__viewer img { transform: none; }
+}
+
+/* Man cam ung (iPhone / Android): bo lam mem 0.12px tren tranh. Tren man mat do cao, safari iOS lam tron
+   ban kinh be nay len thanh mot lop mo thay vi gan nhu khong thay, tranh nhin nhu bi phu mo. */
+@media (hover: none) {
+    .room__art { --soft: 0px; }
 }
