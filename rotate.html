@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#241a10">
+    <title>Lovely Memories · For Luyna</title>
+    <!-- Trang khung de XOAY NGANG man hinh khi trinh duyet khong cho khoa huong (iPhone / safari khong
+         co screen.orientation.lock, hoac may dang khoa xoay). Chua dung mot <iframe> tro ve trang chinh
+         (index.html?rotated=1), xoay 90 do bang CSS. Dung iframe thay vi xoay thang trang: ben trong
+         iframe chieu rong/cao, don vi vw/vh, matchMedia, toa do chuot... DEU la cua mot man hinh nam
+         ngang that, nen toan bo trang chay nguyen ven ma khong phai sua bo cuc nao.
+         Man hinh that dang nam ngang (nguoi xem tu xoay may) thi khung tu het xoay. -->
+    <style>
+        html, body {
+            margin: 0;
+            height: 100%;
+            overflow: hidden;
+            overscroll-behavior: none;
+            background: #241a10;
+        }
+        iframe {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+            background: #241a10;
+            transform-origin: 0 0;
+        }
+    </style>
+</head>
+<body>
+    <iframe id="app" title="Lovely Memories" allow="autoplay; fullscreen"></iframe>
+    <script>
+        (function () {
+            var frame = document.getElementById('app');
+            var params = new URLSearchParams(location.search);
+            // Chi nhan dia chi noi bo dang #/ten-man-hinh, khong nhan gi khac vao src cua iframe
+            function safeHash(h) { return typeof h === 'string' && /^#\/[\w-]*$/.test(h) ? h : ''; }
+
+            var hash = safeHash(params.get('r'));
+            frame.src = 'index.html?rotated=1' + hash;
+
+            // Man hinh dang doc: iframe rong = cao that, cao = rong that, xoay 90 do theo chieu kim dong ho
+            // (dau may quay sang phai). Man hinh that dang ngang: de nguyen, khong xoay.
+            function layout() {
+                var w = innerWidth, h = innerHeight;
+                if (h > w) {
+                    frame.style.width = h + 'px';
+                    frame.style.height = w + 'px';
+                    frame.style.transform = 'translateX(' + w + 'px) rotate(90deg)';
+                } else {
+                    frame.style.width = '100%';
+                    frame.style.height = '100%';
+                    frame.style.transform = 'none';
+                }
+            }
+            layout();
+            addEventListener('resize', layout);
+            addEventListener('orientationchange', function () { setTimeout(layout, 120); });
+
+            addEventListener('message', function (event) {
+                if (event.origin !== location.origin || event.source !== frame.contentWindow) return;
+                var data = event.data || {};
+                var h = safeHash(data.hash);
+                if (data.type === 'route') {
+                    // F5 giua chung van vao dung cho dang xem
+                    history.replaceState(null, '', 'rotate.html?r=' + encodeURIComponent(h));
+                } else if (data.type === 'exit') {
+                    location.replace('index.html' + h);
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

@@ -369,3 +369,15 @@
 @media (prefers-reduced-motion: reduce) {
     .mode__panel, .mode.is-open .mode__panel { transition: none; transform: none; }
 }
+
+/* ---------- TRONG KHUNG XOAY (iPhone, rotate.html) ----------
+   Trang chay trong iframe da xoay 90 do, nen luon la man ngang: nut xoay o goc phai doi thanh nut
+   "quay lai man hinh doc" va luon hien trong phong. Vuot do JS lo (components/rotated.js), nen
+   tat cuon bang tay cua trinh duyet o hai khung cuon de khong tranh nhau. */
+.is-rotated .in-rooms .rotate-btn { display: grid; }   /* is-rotated tren <html>, in-rooms tren <body> */
+.is-rotated .in-rooms .rotate-btn__tip { animation: rotateTip 7s ease 0.4s both; }
+.is-rotated .rooms,
+.is-rotated .timeline__rows { touch-action: none; }
+@media (prefers-reduced-motion: reduce) {
+    .is-rotated .in-rooms .rotate-btn__tip { animation: none; opacity: 1; }
+}
