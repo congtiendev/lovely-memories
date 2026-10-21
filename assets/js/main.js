@@ -1,6 +1,6 @@
 import { TIMING, SPEECH, calm } from './config.js';
 import { Router, BASE_ROUTES } from './router.js';
-import { MESSAGE, ART_LABELS, TOUR, GREETING, GREETING_AUDIO, LETS_GO, NARRATION, INVITE, ROOM_MUSIC, LISTEN } from './content.js';
+import { MESSAGE, ART_LABELS, TOUR, GREETING, GREETING_AUDIO, LETS_GO, NARRATION, INVITE, ROOM_MUSIC, THEME_PATTERN, LISTEN } from './content.js';
 import { CHAPTERS } from './chapters.js';
 import { gapLabel, dateLabel } from './format.js';
 import { Doorway } from './components/doorway.js';
@@ -12,8 +12,11 @@ import { buildGallery } from './components/gallery.js';
 import { loaded } from './components/room.js';
 import { Modes } from './components/strip.js';
 import { Music } from './components/music.js';
+import { Volume } from './components/volume.js';
+import { MoveHint } from './components/move-hint.js';
 import { Tour } from './components/tour.js';
 import { Character } from './components/character.js';
+import { BootMeter } from './components/boot.js';
 import { Narrator } from './components/narrator.js';
 import { Invite } from './components/invite.js';
 import { Listen, autoplayAllowed } from './components/listen.js';
@@ -29,7 +32,10 @@ const music = new Music({
     audio: document.querySelector('.music'),
     button: document.querySelector('.sound'),
     tracks: ROOM_MUSIC,   // phong co bai rieng: toi la tu bat
+    themePattern: THEME_PATTERN,   // nhac chung: theme-1, -2, -3... (tu do tim), het bai nay sang bai kia, het cuoi lap lai
 });
+/* Nut loa o goc duoi-phai: bam mo thanh tang giam am luong, bam lan nua (luc thanh dang mo) la tat tieng */
+new Volume({ music, sound: document.querySelector('.sound'), panel: document.querySelector('.volume') });
 
 /* Moi ky niem mot canh phong, dung tu thu muc memories/. Ten thu muc lam luon
    ten man hinh va dia chi, nen them ky niem khong phai sua gi o day. */
@@ -91,6 +97,12 @@ const character = new Character({
     onRoom: index => {
         if (modes.isStrip) reachInStrip(folders[index], { seat: false });
     },
+    // Vuot / keo / lan dai ngang bang tay: nhan vat di theo nen (character.js), con loi thuyet minh
+    // dang noi do thi dung lai - nguoi xem dang di xem cho khac, khong con dung phong do nua
+    onSwipe: () => {
+        clearTimeout(narrateTimer);
+        if (narrator.isActive) narrator.stop();
+    },
     enabled: () => {
         if (current === 'gate') return !entering;
         return roomOf.has(current)
@@ -115,6 +127,14 @@ const narrator = new Narrator({
     },
 });
 
+/* Goi y bam phim di chuyen, luc vao phong dau tien. May cam ung chi hien o che do cuon ngang (vuot). */
+const moveHint = new MoveHint({
+    element: document.querySelector('.move-hint'),
+    ready: () => roomOf.has(current) && !tour.isOpen && !invite.isOpen && !listen.isOpen
+        && !timeline.isOpen && !document.querySelector('.room.art-open, .mode.is-open'),
+    applies: () => !matchMedia('(hover: none) and (pointer: coarse)').matches || modes.isStrip,
+});
+
 /* ---------- CHO TAI XONG ROI MOI NOI ----------
    Mang cham thi nhan vat, canh va file loi doc ve sau cau noi: bong bong hien ra khi chua thay
    nhan vat dau, tranh dang duoc ke chua hien, tieng khung giua cau. Nen truoc moi lan tu noi
@@ -123,12 +143,21 @@ const narrator = new Narrator({
    Mang hong hay qua cham thi toi da LOAD_BUDGET roi cu noi. */
 const LOAD_BUDGET = 12000;
 
-function readyToSpeak(folder) {
-    const parts = [character.ready(), narrator.preload(folder), document.fonts?.ready];
+function readyToSpeak(folder, meter = null) {
+    // meter: thanh tien do cua man cho luc mo trang (components/boot.js). Khai bao het cac phan
+    // TRUOC khi cho de tong trong so da du ngay tu dau (khong thi % se vot len roi tut xuong)
+    const track = (key, weight, promise) => (meter ? meter.track(key, weight, promise) : promise);
+    meter?.declare('character', 40);
+    const parts = [
+        character.ready(meter ? (done, total) => total && meter.update('character', done / total) : null),
+        track('voice', 10, narrator.preload(folder)),
+        track('fonts', 5, document.fonts?.ready),
+    ];
     if (folder === 'gate') {
-        parts.push(...[...document.querySelectorAll('.stage--gate img, .doorway img')].map(loaded));
+        const images = [...document.querySelectorAll('.stage--gate img, .doorway img')];
+        images.forEach((img, i) => parts.push(track(`gate${i}`, 45 / images.length, loaded(img))));
     } else {
-        parts.push(roomOf.get(folder)?.ready());
+        parts.push(track('room', 45, roomOf.get(folder)?.ready()));
     }
     return Promise.race([Promise.all(parts), wait(LOAD_BUDGET)]);
 }
@@ -196,8 +225,10 @@ function seatCharacter(route) {
     if (elementOf.has(route) && modes.isStrip) {
         // Dai ngang: mot nhan vat cho ca dai, khong gan vao phong nao
         character.mount(roomsEl, 'strip', { index: folders.indexOf(route) });
+        moveHint.offer();   // chi hien mot lan, o ca hai che do (che do cuon ngang khong qua offerTour)
     } else if (elementOf.has(route)) {
         character.mount(elementOf.get(route).querySelector('.room__scene'), 'room');
+        moveHint.offer();
     } else if (route === 'gate') {
         character.mount(gateStage, 'gate', {
             reach: { x: DOOR_X, tol: DOOR_NEAR, onReach: enterThroughDoor },
@@ -320,13 +351,17 @@ router.start(route => {
 (async () => {
     const boot = document.querySelector('.boot');
     if (!boot) return;
+    const meter = new BootMeter(boot);
     const route = current;
     if (route === 'gate' || roomOf.has(route)) {
-        await readyToSpeak(route);
+        await readyToSpeak(route, meter);
     } else {
-        const hall = [...document.querySelectorAll('.stage--hall img')].map(loaded);
-        await Promise.race([Promise.all([...hall, document.fonts?.ready]), wait(LOAD_BUDGET)]);
+        const hall = [...document.querySelectorAll('.stage--hall img')];
+        const parts = hall.map((img, i) => meter.track(`hall${i}`, 90 / hall.length, loaded(img)));
+        parts.push(meter.track('fonts', 10, document.fonts?.ready));
+        await Promise.race([Promise.all(parts), wait(LOAD_BUDGET)]);
     }
+    await meter.finish();   // chay not toi 100% (toi thieu mot nhip) roi moi mo man
     boot.classList.add('is-done');
     setTimeout(() => boot.remove(), 900);   // khop transition .8s cua .boot
 })();

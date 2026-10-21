@@ -46,6 +46,7 @@
     <link rel="stylesheet" href="assets/css/components/room.css">
     <link rel="stylesheet" href="assets/css/components/character.css">
     <link rel="stylesheet" href="assets/css/components/narrate.css">
+    <link rel="stylesheet" href="assets/css/components/move-hint.css">
     <link rel="stylesheet" href="assets/css/components/interlude.css">
     <link rel="stylesheet" href="assets/css/components/timeline.css">
     <link rel="stylesheet" href="assets/css/components/strip.css">
@@ -56,12 +57,21 @@
 
     <script type="module" src="assets/js/main.js"></script>
 
+    <!-- Anh nhan vat chay cua man cho: tai truoc, de man cho khong hien ra trong luc cho chinh no -->
+    <link rel="preload" as="image" href="assets/images/character/right-0.webp">
+    <link rel="preload" as="image" href="assets/images/character/right-1.webp">
+    <link rel="preload" as="image" href="assets/images/character/right-2.webp">
+    <link rel="preload" as="image" href="assets/images/character/right-3.webp">
+
     <!-- Man cho luc mo trang: viet thang vao day (khong nam trong file CSS rieng) de no hien
-         ngay tu khung hinh dau, truoc ca khi cac file CSS khac ve. main.js go no di khi canh
-         dau tien da tai du (anh, nhan vat, font, loi doc). Mang hong hay JS loi thi sau 20s
-         tu mo ra, khong de nguoi xem nhin man nau mai. -->
+         ngay tu khung hinh dau, truoc ca khi cac file CSS khac ve. Nhan vat chay doc theo thanh
+         tien do, chay toi dau la tai duoc toi do (--p, 0..100, do components/boot.js dat).
+         main.js go no di khi canh dau tien da tai du (anh, nhan vat, font, loi doc). Mang hong
+         hay JS loi thi sau 20s tu mo ra, khong de nguoi xem nhin man nau mai. -->
     <style>
         .boot {
+            --p: 0;                       /* tien do 0..100, JS dat */
+            --cw: clamp(4.6rem, 15vmin, 7rem);   /* be ngang nhan vat; cao = rong * 457 / 300 */
             position: fixed;
             inset: 0;
             z-index: 200;
@@ -77,24 +87,106 @@
             animation: boot-bail 0.8s ease 20s forwards;
         }
         .boot.is-done { opacity: 0; visibility: hidden; }
-        .boot__ring {
-            width: 2.9rem;
-            height: 2.9rem;
-            border: 2px solid rgba(232, 201, 138, 0.22);
-            border-top-color: #e8c98a;
-            border-radius: 50%;
-            animation: boot-spin 1s linear infinite;
+
+        /* Duong chay: nhan vat dung tren thanh, chan cham mat thanh */
+        .boot__track {
+            position: relative;
+            width: min(78vw, 26rem);
+            margin-top: calc(var(--cw) * 1.52);   /* cho cho nhan vat o phia tren */
         }
-        .boot__text { margin: 0; font-style: italic; }
-        @keyframes boot-spin { to { transform: rotate(360deg); } }
+        .boot__bar {
+            height: 0.5rem;
+            border-radius: 999px;
+            background: rgba(232, 201, 138, 0.16);
+            box-shadow: inset 0 0 0 1px rgba(232, 201, 138, 0.3);
+            overflow: hidden;
+        }
+        .boot__fill {
+            width: calc(var(--p) * 1%);
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, #b88a3e, #e8c98a);
+            box-shadow: 0 0 0.7rem rgba(232, 201, 138, 0.55);
+        }
+        .boot__runner {
+            position: absolute;
+            bottom: 0.15rem;
+            width: var(--cw);
+            aspect-ratio: 300 / 457;
+            /* chay het be rong thanh: nhan vat luon nam TRONG thanh, khong thoi ra hai dau */
+            left: calc((100% - var(--cw)) * var(--p) / 100);
+        }
+        .boot__runner::before {   /* bong duoi chan */
+            content: '';
+            position: absolute;
+            left: 50%;
+            bottom: -2%;
+            width: 70%;
+            height: 6%;
+            translate: -50% 50%;
+            border-radius: 50%;
+            background: radial-gradient(closest-side, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));
+        }
+        /* Bon khung chay chong len nhau, bat lan luot 8 khung/giay (theo animations.json cua bo asset) */
+        .boot__runner img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            visibility: hidden;
+            animation: boot-run 0.5s steps(1, end) infinite;
+        }
+        .boot__runner img:nth-child(2) { animation-delay: 0.125s; }
+        .boot__runner img:nth-child(3) { animation-delay: 0.25s; }
+        .boot__runner img:nth-child(4) { animation-delay: 0.375s; }
+        @keyframes boot-run {
+            0%   { visibility: visible; }
+            25%  { visibility: hidden; }
+        }
+
+        .boot__text {
+            margin: 0;
+            display: flex;
+            align-items: baseline;
+            gap: 0.7em;
+        }
+        .boot__label { font-style: italic; }
+        .boot__dots span { animation: boot-dot 1.2s ease-in-out infinite; }
+        .boot__dots span:nth-child(2) { animation-delay: 0.2s; }
+        .boot__dots span:nth-child(3) { animation-delay: 0.4s; }
+        .boot__pct {
+            min-width: 3.2ch;
+            text-align: right;
+            font-weight: 600;
+            color: #f3dca0;
+            font-variant-numeric: tabular-nums;
+        }
+        @keyframes boot-dot { 0%, 100% { opacity: 0.2; } 40% { opacity: 1; } }
         @keyframes boot-bail { to { opacity: 0; visibility: hidden; } }
-        @media (prefers-reduced-motion: reduce) { .boot__ring { animation-duration: 3s; } }
+        @media (prefers-reduced-motion: reduce) {
+            .boot__runner img { animation: none; }
+            .boot__runner img:first-child { visibility: visible; }
+            .boot__dots span { animation: none; }
+        }
     </style>
 </head>
 <body>
     <div class="boot" role="status" aria-live="polite">
-        <div class="boot__ring" aria-hidden="true"></div>
-        <p class="boot__text">Đang mở cửa bảo tàng…</p>
+        <div class="boot__track">
+            <div class="boot__runner" aria-hidden="true">
+                <img src="assets/images/character/right-0.webp" alt="" width="300" height="457" draggable="false">
+                <img src="assets/images/character/right-1.webp" alt="" width="300" height="457" draggable="false">
+                <img src="assets/images/character/right-2.webp" alt="" width="300" height="457" draggable="false">
+                <img src="assets/images/character/right-3.webp" alt="" width="300" height="457" draggable="false">
+            </div>
+            <div class="boot__bar" role="progressbar" aria-label="Đang tải" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                <div class="boot__fill"></div>
+            </div>
+        </div>
+        <p class="boot__text">
+            <span class="boot__label">Đang tải<span class="boot__dots" aria-hidden="true"><span>.</span><span>.</span><span>.</span></span></span>
+            <span class="boot__pct">0%</span>
+        </p>
     </div>
     <!-- ---------- CONG: anh nen + o cua bam duoc ---------- -->
     <div class="stage stage--gate">
@@ -223,8 +315,8 @@
     <!-- ---------- NHAC NEN ----------
          preload="none": ban nhac nang, chi tai khi nguoi doc bam mo cua.
          Nut loa chi hien ra sau khi nhac da bat (truoc do khong co gi de tat). -->
-    <audio class="music" src="assets/audios/theme.mp3" loop preload="none"></audio>
-    <button class="sound" type="button" hidden aria-pressed="true" aria-label="Tắt nhạc nền">
+    <audio class="music" src="assets/audios/theme-1.mp3" preload="none"></audio>
+    <button class="sound" type="button" hidden aria-pressed="true" aria-expanded="false" aria-controls="volume" aria-label="Tắt nhạc nền">
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
             <path class="sound__horn" d="M4 9.5h3.2L12 5.4v13.2L7.2 14.5H4z"/>
             <path class="sound__wave sound__wave--near" d="M15.2 9.4a3.6 3.6 0 0 1 0 5.2"/>
@@ -233,11 +325,36 @@
         </svg>
     </button>
 
-    <!-- Hien khi vao che do cuon ngang tren may dang dung ma khong khoa duoc huong -->
-    <div class="rotate-hint" lang="vi">
-        <span class="rotate-hint__icon" aria-hidden="true">▭</span>
-        <p>Xoay ngang máy để xem dải kỷ niệm</p>
+    <!-- Goi y di chuyen nhan vat, hien mot lan luc vao phong dau tien (components/move-hint.js) -->
+    <div class="move-hint" role="status" lang="vi" hidden>
+        <div class="move-hint__keys" aria-hidden="true">
+            <span class="move-hint__pad"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span>
+            <span class="move-hint__or">hoặc</span>
+            <span class="move-hint__pad move-hint__pad--arrows"><kbd>&uarr;</kbd><kbd>&larr;</kbd><kbd>&darr;</kbd><kbd>&rarr;</kbd></span>
+        </div>
+        <p class="move-hint__text move-hint__text--keys">Bấm phím để đưa nhân vật đi lại trong phòng</p>
+        <p class="move-hint__text move-hint__text--touch">Vuốt ngang để đi sang phòng khác, nhân vật sẽ đi theo</p>
     </div>
+
+    <!-- Tang giam am luong nhac nen: mo ben canh nut loa (components/volume.js). -->
+    <div class="volume" id="volume" role="group" aria-label="Âm lượng nhạc nền" lang="vi" hidden>
+        <button class="volume__step" type="button" data-step="-1" aria-label="Giảm âm lượng">&minus;</button>
+        <input class="volume__range" type="range" min="0" max="100" step="5" value="100" aria-label="Âm lượng nhạc nền">
+        <button class="volume__step" type="button" data-step="1" aria-label="Tăng âm lượng">+</button>
+        <output class="volume__pct" aria-live="off">100%</output>
+    </div>
+
+    <!-- Nut xoay man hinh: goc tren-phai, ben trai nut "Che do xem". Chi hien khi dang o che do cuon
+         ngang ma may dang cam doc. Chi GOI Y, khong chan gi: bam thi thu khoa huong, khong duoc thi
+         nhac xoay tay. -->
+    <button class="rotate-btn" type="button" lang="vi" aria-label="Xoay ngang màn hình">
+        <svg class="rotate-btn__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <rect x="8" y="3.5" width="8" height="13" rx="1.6"/>
+            <path d="M11 14h2"/>
+            <path d="M5 19.5a8.5 8.5 0 0 0 14 0M16.6 18.6l2.6 1.1.9-2.7"/>
+        </svg>
+        <span class="rotate-btn__tip" role="status">Xoay ngang máy để xem dải kỷ niệm</span>
+    </button>
 
     <!-- ---------- MAN CHUYEN CHUONG ----------
          Vua la tam bien ngan hai chuong, vua la man cho tai anh phong sau. -->

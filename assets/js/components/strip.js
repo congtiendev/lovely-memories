@@ -83,6 +83,7 @@ export class Modes {
         this.#enableDrag();
         this.#enableWheel();
         addEventListener('resize', () => this.#checkOrientation());
+        document.querySelector('.rotate-btn')?.addEventListener('click', () => this.#rotate());
         // Don not lua chon da luu tu ban truoc, khong thi may nao tung chon cuon
         // ngang se mai mai con lai mot khoa mo trong localStorage
         try { localStorage.removeItem(KEY); } catch { /* trinh duyet chan: khong sao */ }
@@ -93,6 +94,7 @@ export class Modes {
     #settle = null;
     #getCurrent;
     #raf = 0;
+    #locked = false;   // da khoa huong ngang bang nut xoay (de bo khoa khi roi che do cuon ngang)
     #pos = 0;        // vi tri dang ve, so thuc - scrollLeft doc lai bi lam tron
     #target = 0;
     #tau = WHEEL_TAU;
@@ -292,20 +294,40 @@ export class Modes {
         });
     }
 
-    /* Dai ngang chi hop ly khi man hinh nam ngang. Thu khoa huong truoc (chi
-       chay duoc khi dang toan man hinh va tren may cho phep), khong duoc thi
-       nhac nguoi xem tu xoay. */
-    async #checkOrientation() {
-        const portrait = innerHeight > innerWidth;
-        const need = this.isStrip && portrait;
+    /* Dai ngang hop ly nhat khi man hinh nam ngang, nhung dien thoai cam doc van xem duoc: day
+       CHI LA GOI Y. Class `needs-rotate` bat nut xoay man hinh o goc tren-phai (strip.css), khong
+       con tu khoa huong va khong che man hinh. */
+    #checkOrientation() {
+        const need = this.isStrip && innerHeight > innerWidth;
         this.#root.classList.toggle('needs-rotate', need);
-        if (!need || !screen.orientation?.lock) return;
+        // Da duoc xoay ngang roi (bang nut hay bang tay) thi bo khoa de may tu xoay lai binh thuong
+        if (!need && !this.isStrip) this.#unlockOrientation();
+    }
+
+    /* Nut xoay man hinh. Trinh duyet chi cho khoa huong khi dang toan man hinh va khong phai may
+       nao cung cho (iPhone khong co); khong duoc thi nhac nguoi xem tu xoay. Phai goi tu cu bam. */
+    async #rotate() {
+        const button = document.querySelector('.rotate-btn');
         try {
+            if (!screen.orientation?.lock) throw new Error('no-lock');
             if (!document.fullscreenElement) await document.documentElement.requestFullscreen?.();
             await screen.orientation.lock('landscape');
-            this.#root.classList.remove('needs-rotate');
+            this.#locked = true;
+            this.#checkOrientation();
         } catch {
-            /* may khong cho khoa huong - de loi nhac hien */
+            const tip = button?.querySelector('.rotate-btn__tip');
+            if (!tip) return;
+            tip.textContent = 'Máy này không cho khoá hướng, bạn xoay ngang máy bằng tay nhé';
+            button.classList.remove('is-asking');
+            void button.offsetWidth;   // cho animation chay lai tu dau
+            button.classList.add('is-asking');
         }
+    }
+
+    #unlockOrientation() {
+        if (!this.#locked) return;
+        this.#locked = false;
+        try { screen.orientation.unlock?.(); } catch { /* khong sao */ }
+        if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
     }
 }

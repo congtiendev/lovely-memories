@@ -8,7 +8,7 @@ buoc xu ly (bang GStreamer + `audioop`, khong co ffmpeg tren may):
 1. **Cat 33s dao dau** — nhac vao thang doan chinh, khong bat nguoi nghe cho.
    Cho cat duoc vao dan 80ms cho khoi nghe "cop".
 2. **Chuan hoa am luong** — nhan he so 1.16 de dinh cham 0.99 FS. Vi the trong
-   `js/components/music.js` co the mo `LEVEL = 1` ma khong so vo tieng.
+   `js/components/music.js` co the mo `LEVEL = 1` ma khong so vo tieng (dang dat 0.8 cho khong to hon tieng thuyet minh).
    Cuoi ban ra dan 400ms cho khop cho no chay vong lai tu dau.
 3. **Ma hoa lai 160 kbps CBR** — 8.2 MB -> 2.8 MB. Ban cuoi: 140.5s,
    dinh -0.56 dBFS, rms -14.8 dBFS.
@@ -40,3 +40,14 @@ xu ly (tren may khong co ffmpeg lan GStreamer: giai ma bang `miniaudio`, ma hoa 
 `js/content.js`), 8.5s. Phat qua `Narrator` (key `'gate'` trong `main.js`) nen chu
 trong bong bong chay khop do dai file. Trang vua mo thi trinh duyet chan tieng: cau
 chao chi co chu, cu bam / phim dau tien se chao lai tu dau kem tieng.
+
+
+# Nhac chung nhieu bai (theme-1, theme-2, theme-3...)
+
+Nhac cho cong, sanh va cac phong khong co bai rieng la `theme-1.mp3`, `theme-2.mp3`, ... Phat het
+bai nay sang bai ke tiep, het bai cuoi thi quay lai bai dau (`js/components/music.js`).
+
+**Them nhac khong can sua code**: tha `theme-3.mp3`, `theme-4.mp3`, ... vao thu muc nay (so lien
+tiep, bat dau tu 1). Luc mo trang, trang tu do tim: gui yeu cau HEAD cho tung `theme-N.mp3` toi
+file dau tien khong co thi dung (toi da 60 bai). Thieu mot so giua chung (co 1, 2, 4 ma khong co 3)
+thi bai 4 bi bo qua. Mau duong dan nam o `THEME_PATTERN` trong `js/content.js`.

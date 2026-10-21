@@ -1310,6 +1310,6 @@ export const CHAPTERS = [
         },
         arts: [
         ],
-        letter: {"countdown": {"to": "2026-10-23T19:00:00+07:00", "label": "Còn", "done": "Tới giờ hẹn rồi em iu ơi 💛"}, "lines": [{"text": "Hà Nội, ngày 23 tháng 10 năm 2026", "style": "date"}, {"text": "Thư mời sinh nhật", "style": "title"}, {"text": "Sunbee thân mến,", "style": "greet"}, {"text": "Em có lời mời tham dự buổi tiệc sinh nhật"}, {"text": "do anh - Kong làm BTC"}, {"text": "Timeline :"}, {"text": "19h00 : Anh đón em"}, {"text": "19h30 : Ăn tối tại La Sen Restaurant"}, {"text": "- Hoàn Kiếm", "style": "more"}, {"text": "21h00 : La Sen Skybar"}, {"text": "hoặc Top of Hanoi", "style": "more"}, {"text": "23h00 : Đưa em về nhà"}, {"text": "Trân trọng,", "style": "sign"}, {"text": "Kí tên: Kong Tien", "style": "sign"}]},
+        letter: {"countdown": {"to": "2026-10-23T19:00:00+07:00", "label": "Còn", "done": "Tới giờ hẹn rồi em iu ơi 💛"}, "lines": [{"text": "Hà Nội, ngày 23 tháng 10 năm 2026", "style": "date"}, {"text": "Thư mời sinh nhật", "style": "title"}, {"text": "Sunbee thân mến,", "style": "greet"}, {"text": "Em có lời mời tham dự buổi tiệc sinh nhật"}, {"text": "do anh - Kong làm BTC"}, {"text": "Timeline :"}, {"text": "19h00 : Anh đón em"}, {"text": "19h30 : Ăn tối tại La Sen Restaurant - Hoàn Kiếm"}, {"text": "21h00 : La Sen Skybar hoặc Top of Hanoi"}, {"text": "23h00 : Đưa em về nhà"}, {"text": "Trân trọng,", "style": "sign"}, {"text": "Kí tên: Kong Tien", "style": "sign"}]},
     },
 ];

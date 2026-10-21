@@ -168,6 +168,11 @@ trong `assets/images/character/`, nguon la bo asset `Game_character_asset_pack`)
   tung cau mot; neu phong co `audio` (file mp3 de trong thu muc ky niem, vd
   `memories/17-03-2026/thuyet-minh.mp3`) thi phat loi long tieng, ha nhac nen va go chu
   khop do dai file (thoi gian moi cau chia theo so chu, vi file khong co moc tung cau).
+- **Man cho luc mo trang** (`.boot` trong `index.html`, tien do trong `js/components/boot.js`):
+  nhan vat chay doc thanh tien do kem chu "Dang tai" va %. Tien do la tien do THAT cua nhung
+  thu canh dau tien can (khung hinh nhan vat, anh canh/phong, font, loi doc), moi phan co mot
+  trong so (`readyToSpeak` trong `main.js`); con so duoi theo gia tri that cho mem va toi thieu
+  ~0.9s de kip thay nhan vat chay. Mang qua cham thi toi da `LOAD_BUDGET` (12s) roi cu vao.
 - Moi frame cat chung mot khung (30,80)-(482,768) tren canvas 512x768 goc roi
   thu ve 300x457, de chan va dau khong lech giua cac frame.
 

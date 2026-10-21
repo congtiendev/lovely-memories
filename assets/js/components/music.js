@@ -17,7 +17,7 @@ const FADE = 2600;        // vao nhe dan cho khop nhip cua dang mo
 const LEAVE = 1200;       // ra nhe dan khi doi bai, hoac khi sang noi da tat nhac
 const ROOM_DEFAULT = true;    // nhac nen trong phong luc dau: bat (thuyet minh thi ha nho, xem duck())
 const DUCK = 0.16;        // am luong nhac nen khi co loi thuyet minh (khong bat duoc tren iOS: xem duck())
-const LEVEL = 1;          // het co - ban nhac da duoc chuan hoa sat tran khi cat
+const LEVEL = 0.8;        // 80%: ban nhac da duoc chuan hoa sat tran nen mo het co thi hoi to so voi tieng thuyet minh va tieng nhan vat
 
 /* Safari iOS khong cho dat `volume` cua <audio> (luon doc ra 1, ghi bi bo qua), nen o do
    am luong di qua mot GainNode cua Web Audio (xem #useGain). Do thu mot lan thay vi do
@@ -28,6 +28,29 @@ function volumeIsSettable(audio) {
     const ok = audio.volume === 0.5;
     audio.volume = before;
     return ok;
+}
+
+const VOLUME_KEY = 'lovely-memories:volume';   // am luong nguoi nghe chon, 0..1
+
+/** Am luong da luu (mac dinh 1 = het muc LEVEL). Loi doc (che do rieng tu...) thi dung mac dinh. */
+function savedVolume() {
+    try {
+        const v = parseFloat(localStorage.getItem(VOLUME_KEY));
+        if (Number.isFinite(v)) return Math.min(1, Math.max(0, v));
+    } catch { /* khong sao */ }
+    return 1;
+}
+
+const MAX_THEMES = 60;   // gioi han so bai chung se do tim (tranh do vo han neu may chu tra 200 cho moi duong dan)
+
+/** File nhac co that su ton tai khong. May chu tra trang HTML (200) cho duong dan khong co thi khong tinh. */
+async function exists(src) {
+    try {
+        const res = await fetch(src, { method: 'HEAD' });
+        return res.ok && /audio|octet-stream/.test(res.headers.get('content-type') ?? '');
+    } catch {
+        return false;
+    }
 }
 
 export class Music {
@@ -43,25 +66,54 @@ export class Music {
     #folder = null;       // phong dang dung (null: cong/sanh)
     #tracks;              // { [folder]: src } bai rieng cua tung phong
     #trackWanted = {};    // phong co bai rieng: nut loa bat/tat rieng, mac dinh bat
-    #theme;               // bai chung (src goc cua the <audio>)
+    #themes;              // danh sach bai chung, phat het bai nay den bai kia roi lap lai tu dau
+    #themeIndex = 0;      // bai chung dang toi luot
+    #prefetched = null;   // bai ke tiep da duoc tai san (tranh khoang lang luc doi bai)
     #playing;             // src dang nap trong the <audio>
     #themeAt = 0;         // giay dang phat cua bai chung luc doi sang bai rieng
     #run = 0;             // moi lan doi bai la mot luot; luot cu het hieu luc
     #swapping = false;    // dang cho bai cu ra het de doi bai
+    #master = savedVolume();   // am luong nguoi nghe chon bang thanh keo (nhan voi LEVEL / DUCK)
     #ducked = false;      // dang co loi thuyet minh: nhac o muc DUCK
 
-    /** @param tracks { [folder]: src } - phong nao co nhac nen rieng */
-    constructor({ audio, button, tracks = {} }) {
+    /**
+     * @param tracks { [folder]: src } - phong nao co nhac nen rieng
+     * @param themePattern duong dan nhac chung co `{n}` (vd 'assets/audios/theme-{n}.mp3'): nhac cho cong,
+     *        sanh va cac phong khong co bai rieng. Bai 1 la src cua the <audio>; bai 2, 3, 4... duoc DO TIM
+     *        luc mo trang (HEAD toi khi gap file khong co) nen them nhac chi la tha file vao thu muc,
+     *        khong sua code. Phat het bai nay sang bai ke tiep, het cuoi quay lai bai dau.
+     */
+    constructor({ audio, button, tracks = {}, themePattern = null }) {
         this.#audio = audio;
         this.#button = button;
         this.#tracks = tracks;
-        this.#theme = audio.getAttribute('src');
+        this.#themes = [themePattern ? themePattern.replace('{n}', 1) : audio.getAttribute('src')];
+        if (themePattern) this.#discover(themePattern);
         this.#playing = this.#theme;
-        this.#audio.loop = true;
+        if (audio.getAttribute('src') !== this.#playing) audio.src = this.#playing;
+        this.#audio.loop = this.#themes.length === 1;   // mot bai thi lap bai do; nhieu bai thi `ended` chuyen bai
+        audio.addEventListener('ended', () => this.#nextTheme());
+        audio.addEventListener('timeupdate', () => this.#prefetchNext());
         this.#canFade = volumeIsSettable(this.#audio);
         this.#audio.volume = 0;
+        // Bam nut loa do components/volume.js lo (mo thanh am luong / tat tieng), khong phai o day
+    }
 
-        this.#button.addEventListener('click', () => this.toggle());
+    /** Am luong nguoi nghe chon, 0..1. */
+    get volume() { return this.#master; }
+
+    /** Muc ra loa khi binh thuong / khi dang co loi thuyet minh, da nhan voi am luong nguoi nghe chon. */
+    get #level() { return LEVEL * this.#master; }
+    get #duckLevel() { return DUCK * this.#master; }
+
+    /** Nguoi nghe keo thanh am luong: doi ngay (khong ra dan dai: keo thanh la muon nghe thay lien). */
+    setVolume(v) {
+        this.#master = Math.min(1, Math.max(0, v));
+        try { localStorage.setItem(VOLUME_KEY, String(this.#master)); } catch { /* khong sao */ }
+        this.#sync();
+        // Dang phat that thi doi ngay; dang doi bai / dang tat thi #play() se lay muc moi luc vao
+        if (!this.#started || !this.#on || this.#swapping || this.#audio.paused) return;
+        this.#fadeTo(this.#ducked ? this.#duckLevel : this.#level, 90);
     }
 
     /** Cu bam that dau tien: nhac vao dan. Goi lai o moi cu bam sau: neu lan truoc trinh
@@ -94,6 +146,23 @@ export class Music {
         else this.#wanted = !this.#wanted;
         this.#apply(0);
     }
+
+    /* Do tim bai 2, 3, 4... theo mau duong dan: dung o file dau tien khong co. Chay nen, khong chan gi:
+       bai 1 dang phat / sap phat, toi luc het bai thi danh sach da du. Bai moi them vao cuoi danh sach
+       ngay khi tim thay, nen ke ca khi nguoi nghe dang nghe bai 1 thi bai 3 van duoc xep vao luot. */
+    async #discover(pattern) {
+        for (let n = 2; n <= MAX_THEMES; n++) {
+            const src = pattern.replace('{n}', n);
+            if (!(await exists(src))) break;
+            this.#themes.push(src);
+            // Co tu 2 bai tro len: het bai chung thi chuyen bai, khong lap mot bai. Bai rieng cua phong
+            // (dang phat luc nay) van phai lap.
+            if (this.#playing === this.#theme) this.#audio.loop = false;
+        }
+    }
+
+    /** Bai chung dang toi luot. */
+    get #theme() { return this.#themes[this.#themeIndex]; }
 
     get #track() { return this.#tracks[this.#folder] ?? null; }
 
@@ -176,11 +245,37 @@ export class Music {
         this.#vol = 0;
         audio.src = src;
         this.#playing = src;
+        // Bai rieng cua phong lap lai; bai chung chay het roi chuyen bai (xem #nextTheme)
+        audio.loop = src !== this.#theme || this.#themes.length === 1;
         if (src === this.#theme && this.#themeAt) {
             const at = this.#themeAt;
             // Dat currentTime truoc khi co metadata thi bi bo qua
             audio.addEventListener('loadedmetadata', () => { audio.currentTime = at; }, { once: true });
         }
+    }
+
+    /* Bai chung phat het: sang bai ke tiep, het cuoi thi quay lai bai dau. Bai rieng cua phong thi
+       `loop` nen khong bao gio toi day. */
+    #nextTheme() {
+        if (this.#audio.loop || this.#playing !== this.#theme || this.#swapping) return;
+        this.#themeIndex = (this.#themeIndex + 1) % this.#themes.length;
+        this.#themeAt = 0;
+        const audio = this.#audio;
+        audio.src = this.#theme;
+        this.#playing = this.#theme;
+        if (this.#started && this.#on) this.#play();
+    }
+
+    /* Con ~20s thi bai chung het: tai san bai ke tiep vao bo nho dem, de luc doi bai khong co khoang lang
+       (bai nang vai MB, tai luc do thi nghe thay chung). Chi lam mot lan cho moi bai. */
+    #prefetchNext() {
+        const audio = this.#audio;
+        if (this.#themes.length < 2 || this.#playing !== this.#theme || !audio.duration) return;
+        if (audio.duration - audio.currentTime > 20) return;
+        const next = this.#themes[(this.#themeIndex + 1) % this.#themes.length];
+        if (this.#prefetched === next) return;
+        this.#prefetched = next;
+        fetch(next).catch(() => {});
     }
 
     #play() {
@@ -190,7 +285,7 @@ export class Music {
         if (this.#ducked && !this.#canFade) return;   // khong ha nho duoc: dang thuyet minh thi nhac nghi, duck(false) se phat
         const p = this.#audio.play();
         if (p && p.catch) p.catch(() => {});
-        this.#fadeTo(this.#ducked ? DUCK : LEVEL);   // vua doi bai giua luc dang thuyet minh: vao nho
+        this.#fadeTo(this.#ducked ? this.#duckLevel : this.#level);   // vua doi bai giua luc dang thuyet minh: vao nho
     }
 
     /* Vao/ra bang dong ho chu khong bang transition: `volume` khong phai thuoc
@@ -221,7 +316,7 @@ export class Music {
         // Dang ra bai cu de doi bai: dung cat ngang (bai moi se tu vao dung muc, xem #play)
         if (!this.#started || !this.#on || this.#swapping) return;
         if (this.#canFade) {
-            this.#fadeTo(on ? DUCK : LEVEL, 700);
+            this.#fadeTo(on ? this.#duckLevel : this.#level, 700);
         } else if (on) {
             this.#audio.pause();
         } else {
@@ -231,7 +326,8 @@ export class Music {
     }
 
     #sync() {
-        this.#button.classList.toggle('is-off', !this.#on);
+        // Keo thanh ve 0 cung nhu tat tieng: bieu tuong loa gach cheo
+        this.#button.classList.toggle('is-off', !this.#on || this.#master === 0);
         this.#button.setAttribute('aria-pressed', String(this.#on));
         this.#button.setAttribute('aria-label', this.#on ? 'Tắt nhạc nền' : 'Bật nhạc nền');
     }

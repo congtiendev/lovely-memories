@@ -58,6 +58,8 @@ const PROFILES = {
         start: 0.12,
     },
 };
+const HAND_MS = 1500;      // ms: sau lan cham/lan/keo cuoi, cuon con quan tinh duoc tinh la do tay chung nay
+const SWIPE_HOLD = 160;    // ms: ngung cuon bao lau thi nhan vat thoi bo, ve dung nghi
 const FOLLOW_TAU = 150;   // ms: nen cuon theo nhan vat cham mot nhip, khong dinh cung vao no
 const SPEED = 0.42;       // chieu cao canh moi giay, theo chieu ngang
 const DEPTH_SPEED = 0.5;  // di len/xuong cham hon vi san ngan
@@ -86,10 +88,19 @@ export class Character {
     #root;
     #onCamera;
     #onRoom;
+    #onSwipe;
     #room = null;       // dai ngang: phong nhan vat dang dung, lan bao gan nhat qua onRoom
+    #holding = false;   // dai ngang: nguoi xem dang cham/ giu chuot tren dai (de biet cuon la do TAY, khong phai tu nhay phong)
+    #inputAt = 0;       // lan cuoi nguoi xem cham/ lan chuot / keo (performance.now)
+    #scrollSeen = null; // scrollLeft o khung hinh truoc, de thay nen vua bi keo
+    #swipeUntil = 0;    // toi moc nay nhan vat con dang bo theo cu vuot (giu dang di, khong ve dung nghi)
+    #swiping = false;
     #cam = null;        // vi tri cuon dang ve (so thuc) khi nen dang cuon theo nhan vat
     #index = 0;         // chi so phong dang xem (cho dai ngang: dat nhan vat vao dung phong)
     #frames = {};       // { down: [img x4], ..., talk: [img x6] }
+    #onProgress = null; // man cho: goi (xong, tong) moi khi mot khung hinh tai xong
+    #framesDone = 0;
+    #framesTotal = 0;
     #loaded = null;     // Promise: moi khung hinh da tai xong (xem ready())
     #shown = null;
     #enabled;
@@ -97,6 +108,7 @@ export class Character {
     #kind = 'room';
     #reach = null;      // { x, tol, onReach }: cham vach nay thi coi nhu toi noi
     #held = [];         // phim dang giu, cai bam sau cung o cuoi
+    #watched = new WeakSet();   // cac dai da gan nghe tay nguoi xem
     #at = { room: null, gate: null, strip: null };   // vi tri nho lai cho tung noi: { x, y }
     #locked = false;    // khoa phim (dang tu di)
     #auto = null;       // chuyen dong tu dong dang chay
@@ -119,11 +131,14 @@ export class Character {
      * @param onRoom(index) dai ngang: nhan vat vua BUOC sang phong khac. Bao ngay luc qua
      *        mep phong, khong doi nen cuon xong - nguoi xem bam "Thuyet minh" luc nen con
      *        dang truot theo thi van dung phong nhan vat dang dung
+     * @param onSwipe dai ngang: nguoi xem vua BAT DAU vuot / keo / lan nen bang tay. Nhan vat di theo
+     *        nen; ben ngoai dung loi thuyet minh dang noi do tai day (khong con dung phong)
      */
-    constructor({ enabled = () => true, onCamera = () => {}, onRoom = () => {} } = {}) {
+    constructor({ enabled = () => true, onCamera = () => {}, onRoom = () => {}, onSwipe = () => {} } = {}) {
         this.#enabled = enabled;
         this.#onCamera = onCamera;
         this.#onRoom = onRoom;
+        this.#onSwipe = onSwipe;
         this.#root = document.createElement('div');
         this.#root.className = 'character';
         this.#root.setAttribute('aria-hidden', 'true');
@@ -168,6 +183,8 @@ export class Character {
         this.#panTo = null;
         if (changed) {
             this.#scene = scene;
+            this.#scrollSeen = null;
+            if (kind === 'strip') this.#watchHand(scene);
             this.#load();
             scene.append(this.#root);
             this.#root.dataset.kind = kind;
@@ -244,12 +261,12 @@ export class Character {
      * @param action nhan nut (vd 'OK'): noi xong thi hoi va cho bam; true neu duoc bam.
      * @param typingMs / hold xem Bubble.say (khop chu voi loi doc)
      */
-    async say(text, { action = null, typingMs = 0, hold = null } = {}) {
+    async say(text, { action = null, typingMs = 0, hold = null, thinking } = {}) {
         if (!this.#scene) return false;
         this.#bubble ??= new Bubble(this.#root);
         this.#speaking = true;
         const done = await this.#bubble.say(text, {
-            action, typingMs, hold,
+            action, typingMs, hold, thinking,
             onTyped: () => { this.#speaking = false; },
         });
         this.#speaking = false;
@@ -318,6 +335,35 @@ export class Character {
         resolve(false);
     }
 
+    /* Nhan ra cuon do TAY nguoi xem (vuot tren dien thoai, lan chuot, keo chuot) de nhan vat di
+       theo. Cuon do code (bam dong thoi gian, nhay phong, nen cuon theo nhan vat) khong dung cac
+       su kien nay nen khong bi tinh nham. Vuot xong tay nhac len van con quan tinh, nen "dang
+       cuon bang tay" keo dai them mot luc sau lan input cuoi (xem #byHand). */
+    #watchHand(el) {
+        if (this.#watched.has(el)) return;
+        this.#watched.add(el);
+        const touch = down => () => { this.#holding = down; this.#inputAt = performance.now(); };
+        el.addEventListener('touchstart', touch(true), { passive: true });
+        el.addEventListener('touchmove', touch(true), { passive: true });
+        el.addEventListener('touchend', touch(false), { passive: true });
+        el.addEventListener('touchcancel', touch(false), { passive: true });
+        el.addEventListener('wheel', () => { this.#inputAt = performance.now(); }, { passive: true });
+        // Chuot: keo bang cach nhan giu (strip.js bat pointerdown). Cam ung da co touch* o tren.
+        el.addEventListener('pointerdown', event => {
+            if (event.pointerType !== 'mouse') return;
+            this.#holding = true;
+            this.#inputAt = performance.now();
+        }, { passive: true });
+        addEventListener('pointerup', () => {
+            if (this.#holding) this.#inputAt = performance.now();
+            this.#holding = false;
+        });
+    }
+
+    #byHand(now) {
+        return this.#holding || now - this.#inputAt < HAND_MS;
+    }
+
     #unlock() {
         this.#locked = false;
     }
@@ -327,8 +373,13 @@ export class Character {
        chop mot nhip luc trinh duyet giai ma lai anh. */
     /** Moi khung hinh cua nhan vat da tai xong - doi cai nay roi moi cho no noi, khong thi
         bong bong thoai hien ra ma chua thay nhan vat dau (mang cham). Goi som cung duoc. */
-    ready() {
+    ready(onProgress = null) {
         this.#load();
+        // Man cho cho thanh tien do: bao ngay so khung da xong, roi sau moi khung ve them
+        if (onProgress) {   // hai noi cung goi ready(): chi ghi de khi co callback moi, khong xoa cai cu
+            this.#onProgress = onProgress;
+            onProgress(this.#framesDone, this.#framesTotal);
+        }
         return this.#loaded;
     }
 
@@ -352,11 +403,16 @@ export class Character {
             img.fetchPriority = 'low';   // dung tranh anh nen cong dang can ve truoc
             img.draggable = false;
             // Loi thi tai lai o tren, nen chi `load` moi tinh la xong
-            waiting.push(new Promise(resolve => img.addEventListener('load', resolve, { once: true })));
+            waiting.push(new Promise(resolve => img.addEventListener('load', () => {
+                this.#framesDone++;
+                this.#onProgress?.(this.#framesDone, this.#framesTotal);
+                resolve();
+            }, { once: true })));
             this.#root.append(img);
             return img;
         });
         for (const [name, n] of Object.entries(FRAMES)) this.#frames[name] = make(name, n);
+        this.#framesTotal = waiting.length;
         this.#loaded = Promise.all(waiting);
     }
 
@@ -444,6 +500,7 @@ export class Character {
         if (!this.#at[this.#kind]) this.#fit(true);
 
         const [x0] = this.#pos();
+        if (this.#kind === 'strip') this.#followHand(now, w);
         if (this.#auto) {
             this.#stepAuto(dtMs, now, w, h);
         } else {
@@ -458,6 +515,8 @@ export class Character {
                 this.#onRoom(room);
             }
             this.#follow(dtMs);
+            // Ghi lai vi tri cuon SAU khi nen da cuon theo nhan vat: khung sau chi thay phan do tay keo
+            this.#scrollSeen = this.#scene.scrollLeft;
         }
 
         const fps = this.#state === 'talk' ? TALK_FPS : WALK_FPS;
@@ -467,6 +526,29 @@ export class Character {
             this.#frame = (this.#frame + 1) % FRAMES[this.#state];
         }
         this.#draw();
+    }
+
+    /* Nguoi xem vuot / keo nen sang ngang: nhan vat di THEO, giu nguyen cho dung tren man hinh
+       (nen di bao nhieu, nhan vat di bay nhieu), buoc chan huong theo chieu vuot. Dung vuot thi
+       thoi bo. Luc nen dang cuon theo nhan vat (phim, tu di) thi khong dung toi. */
+    #followHand(now, w) {
+        const el = this.#scene;
+        const seen = this.#scrollSeen ?? el.scrollLeft;
+        const delta = el.scrollLeft - seen;
+        if (Math.abs(delta) >= 0.5 && !this.#auto && this.#cam === null && this.#byHand(now)) {
+            const [x, y] = this.#pos();
+            this.#set(x + delta / w * 100, y);
+            this.#facing = delta > 0 ? 'right' : 'left';
+            this.#setState(this.#facing, now);
+            this.#swipeUntil = now + SWIPE_HOLD;
+            if (!this.#swiping) {
+                this.#swiping = true;
+                this.#onSwipe();   // vua bat dau vuot: dung thuyet minh dang noi do
+            }
+        } else if (this.#swiping && now >= this.#swipeUntil) {
+            this.#swiping = false;
+        }
+        this.#scrollSeen = el.scrollLeft;
     }
 
     #stepManual(dt, now, w, h) {
@@ -489,6 +571,8 @@ export class Character {
                 : vx ? (vx > 0 ? 'right' : 'left') : (vy > 0 ? 'down' : 'up');
             this.#setState(this.#facing, now);
             this.#checkReach();
+        } else if (now < this.#swipeUntil) {
+            // Dang bo theo cu vuot cua nguoi xem: giu dang di, dung ve dung nghi giua chung
         } else {
             // Dung lai: quay ve phia nguoi xem, dung nghi - hoac dung noi neu dang go chu
             const want = this.#speaking ? 'talk' : 'idle';
