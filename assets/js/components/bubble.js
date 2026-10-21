@@ -73,13 +73,15 @@ export class Bubble {
     /**
      * Hien bong bong: cham ba dau "dang go", roi go tung chu.
      * @param onTyped goi khi chu da go xong (nhan vat thoi mo mieng, bong bong con ton tai de doc)
+     * @param thinking ms ba cham "dang go" truoc khi chu hien (mac dinh SPEECH.thinking); thuyet minh co tieng
+     *        dat ngan de chu dau theo sat tieng
      * @param typingMs go het chu trong dung khoang nay (de khop voi loi doc); bo qua thi go theo SPEECH.char
      * @param hold ms giu bong bong sau khi go xong; bo qua thi tinh theo do dai cau
      * @param action nhan nut (vd 'OK'): go xong thi hien nut va CHO nguoi xem bam, bong bong
      *        khong tu thu lai. Co nut thi Promise tra ve true khi duoc bam.
      * @returns Promise<boolean> true neu noi het (hoac nut duoc bam), false neu bi huy giua chung
      */
-    async say(text, { onTyped = () => {}, action = null, typingMs = 0, hold = null } = {}) {
+    async say(text, { onTyped = () => {}, action = null, typingMs = 0, hold = null, thinking = SPEECH.thinking } = {}) {
         this.#cancelAction?.();
         const run = ++this.#run;
         const alive = () => run === this.#run;
@@ -104,7 +106,7 @@ export class Bubble {
             this.#el.classList.remove('is-thinking');
             this.#fit(false);
         } else {
-            await wait(SPEECH.thinking);
+            await wait(thinking);
             if (!alive()) return false;
             this.#el.classList.remove('is-thinking');
             this.#el.classList.add('is-typing');

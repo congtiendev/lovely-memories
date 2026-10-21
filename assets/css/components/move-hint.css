@@ -1,0 +1,98 @@
+/* ---------- GOI Y DI CHUYEN NHAN VAT ----------
+   The nho, cung chat lieu voi tam the huong dan (tour.css): mat giay a, vien vang, chu muc nau.
+   Nam o phan duoi giua man hinh (tren nut "TIEP", duoi cac buc tranh), khong chan chuot / phim:
+   chi la mot dong nhac. Hien mot lan (components/move-hint.js). */
+.move-hint {
+    position: fixed;
+    left: 50%;
+    bottom: max(13svh, 6.5rem);
+    z-index: 9;
+    display: grid;
+    justify-items: center;
+    gap: 0.5rem;
+    padding: 0.7rem 1.2rem 0.75rem;
+    border: 1px solid rgba(198, 162, 96, 0.7);
+    border-radius: 0.8rem;
+    background: linear-gradient(rgba(255, 250, 236, 0.97), rgba(243, 232, 208, 0.97));
+    box-shadow: 0 0.5rem 1.4rem rgba(14, 9, 4, 0.5);
+    font-family: 'EB Garamond', Georgia, 'Times New Roman', serif;
+    color: var(--ink);
+    text-align: center;
+    pointer-events: none;
+    translate: -50% 0.6rem;
+    opacity: 0;
+    transition: opacity 360ms ease, translate 360ms ease;
+}
+.move-hint[hidden] { display: none; }
+.move-hint.is-open { opacity: 1; translate: -50% 0; }
+
+.move-hint__keys {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+}
+.move-hint__or {
+    font-size: 0.85rem;
+    font-style: italic;
+    letter-spacing: 0.06em;
+    color: rgba(122, 96, 58, 0.9);
+}
+
+/* Cum phim hinh chu T nguoc: phim tren o giua, ba phim duoi */
+.move-hint__pad {
+    display: grid;
+    grid-template-columns: repeat(3, 1.75rem);
+    grid-template-rows: repeat(2, 1.75rem);
+    gap: 0.2rem;
+}
+.move-hint__pad kbd:nth-child(1) { grid-column: 2; grid-row: 1; }
+.move-hint__pad kbd:nth-child(2) { grid-column: 1; grid-row: 2; }
+.move-hint__pad kbd:nth-child(3) { grid-column: 2; grid-row: 2; }
+.move-hint__pad kbd:nth-child(4) { grid-column: 3; grid-row: 2; }
+
+.move-hint kbd {
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(150, 112, 52, 0.75);
+    border-bottom-width: 3px;      /* than phim: day phim day hon */
+    border-radius: 0.38rem;
+    background: linear-gradient(#fffdf4, #f0e2c3);
+    box-shadow: 0 0.1rem 0.15rem rgba(60, 38, 12, 0.25);
+    font: 600 0.95rem/1 'EB Garamond', Georgia, serif;
+    color: rgba(88, 62, 28, 0.98);
+    animation: keyPress 2.4s ease-in-out infinite;
+}
+/* Cac phim nhun xuong lan luot nhu dang duoc bam */
+.move-hint__pad kbd:nth-child(2) { animation-delay: 0.3s; }
+.move-hint__pad kbd:nth-child(3) { animation-delay: 0.6s; }
+.move-hint__pad kbd:nth-child(4) { animation-delay: 0.9s; }
+.move-hint__pad--arrows kbd { animation-delay: 1.2s; }
+.move-hint__pad--arrows kbd:nth-child(2) { animation-delay: 1.5s; }
+.move-hint__pad--arrows kbd:nth-child(3) { animation-delay: 1.8s; }
+.move-hint__pad--arrows kbd:nth-child(4) { animation-delay: 2.1s; }
+@keyframes keyPress {
+    0%, 12%, 100% { translate: 0 0; border-bottom-width: 3px; }
+    5%            { translate: 0 0.12rem; border-bottom-width: 1px; background: #f6e7bd; }
+}
+
+.move-hint__text {
+    margin: 0;
+    font-size: clamp(0.88rem, 2vmin, 1.05rem);
+    letter-spacing: 0.03em;
+    text-shadow: var(--ink-carve);
+}
+/* May cam ung: khong co ban phim, chi con dong chi cach vuot */
+.move-hint__text--touch { display: none; }
+.move-hint.is-touch .move-hint__keys,
+.move-hint.is-touch .move-hint__text--keys { display: none; }
+.move-hint.is-touch .move-hint__text--touch { display: block; }
+
+@media (max-width: 480px) {
+    .move-hint { padding: 0.6rem 0.9rem 0.65rem; max-width: 88vw; }
+    .move-hint__pad { grid-template-columns: repeat(3, 1.5rem); grid-template-rows: repeat(2, 1.5rem); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .move-hint { transition: opacity 200ms ease; translate: -50% 0; }
+    .move-hint kbd { animation: none; }
+}

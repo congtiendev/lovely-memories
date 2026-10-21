@@ -260,10 +260,11 @@ export const NARRATION = {
     },
     '29-08-2026': {
         audio: 'memories/29-08-2026/thuyet-minh.mp3',
-        starts: [0.08, 9.6],
+        starts: [0.1, 9.62, 17.98],
         lines: [
             'Tụi mình có nhận được cái voucher 500k nên hôm này KPI phải đủ 1tr mới được nghỉ, anh chỉ nhớ hôm đó ăn rất nhiều cá, ngán luôn giờ vẫn chưa dám ăn lại.',
             'Tụi mình có ghé miami coffe để chụp ảnh, đây là một quán cafe rất đẹp decor nhiều hoa, làm hay không nhìn ra đâu là ẻm đâu là hoa nữa.',
+            'Và hôm này cũng là lần đầu anh lấy hết can đảm để thơm má em, mở đường cho sự hóa hổ sau này hehe',
         ],
     },
     '02-09-2026': {
@@ -457,6 +458,15 @@ export const NARRATION = {
             'Anh đã háo hức đếm từng ngày để chờ khoảnh khắc này, ngày tình mình chung đôiii, anh gửi iu thư mời nhaaa',
         ],
     },
+    '22-07-2026': {
+        audio: 'memories/22-07-2026/thuyet-minh.mp3',
+        starts: [0.08, 11.5, 20.0],
+        lines: [
+            'Em iu bảo chưa đi cafe phố đường tàu bao giờ nên nay ảnh dẫn ẻm đi, tụi mình ăn 1 quán con cháy của nét huế là nét cuốn, đồ ăn khá okela, chỉ là không gian có hơi hẹp thui.',
+            'Anh dẫn nhầm vào 1 quán dành cho du khách nên giá khá chát lại không có view đẹp, bù lại thì nhân viên khá nhiệt tình, tính giá người việt cho mình.',
+            'Hai đứa ngắm mưa tới 11h trời ngớt mới đi về, đó cũng là lần đầu 2 đứa ngắm mưa cùng nhau.',
+        ],
+    },
 };
 
 /* Man moi cham khi mo lai trang bang F5 / link: trinh duyet chan tieng cho toi cu bam dau
@@ -465,6 +475,12 @@ export const LISTEN = {
     text: 'Chạm để nghe 💛',
     hint: 'nhạc nền và lời thuyết minh',
 };
+
+/* Nhac chung (cong, sanh, cac phong khong co bai rieng): theme-1, theme-2, theme-3... trong assets/audios/.
+   Muon them nhac chi can tha file theme-3.mp3, theme-4.mp3... vao do (dat so lien tiep): luc mo trang
+   components/music.js tu do tim toi file dau tien khong co, khong phai sua code. Phat het bai nay sang bai
+   ke tiep, het cuoi thi quay lai bai dau. Bai 1 cung la src cua the <audio class="music"> trong index.html. */
+export const THEME_PATTERN = 'assets/audios/theme-{n}.mp3';
 
 /* Nhac nen rieng cua tung phong (components/music.js): toi phong la bai nay tu bat tu dau,
    roi phong thi tra lai nhac chung. Xu ly file xem assets/audios/README.md. */
